@@ -9,6 +9,8 @@ p2p-syncfile was made to overcome specific constraints:
 3. New files can be added without needing to rewrite the archive.
 4. Many USB drives are formatted with FAT32, which has a file size limit of 4 gigabytes. The archive should automatically overflow to secondary and tertiary files seamlessly.
 
+This is all built atop the highly battle-tested [ZIP archive format](https://en.wikipedia.org/wiki/ZIP_(file_format)), which supports all sorts of great features like store mode (no compression), multi-file support, random access reads, and writes & deletions that don't require regenerating the archive.
+
 ## STATUS
 
 > proposal
