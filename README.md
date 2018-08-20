@@ -1,6 +1,6 @@
 # p2p-syncfile
 
-A general purpose "syncfile" suitable for [sneakernet](...)-style synchronization of data over USB drives or other mediums.
+A general purpose "syncfile" suitable for [sneakernet](https://en.wikipedia.org/wiki/Sneakernet)-style synchronization of data over USB drives or other mediums.
 
 p2p-syncfile was made to overcome specific constraints:
 
