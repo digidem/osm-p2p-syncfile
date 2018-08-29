@@ -46,7 +46,7 @@ db1.osm.put(node, function (err, node) {
   id = node.value.id
 
   db1.ready(function () {
-    db1.media.createWriteStream(function () {
+    db1.media.createWriteStream('photo.png', function () {
       syncfile.once('ready', sync)
     }).end('media data!')
   })
@@ -77,10 +77,12 @@ function sync () {
 }
 
 function check () {
-  db2.ready(function () {
-    db2.get(id, function (err, elm) {
+  db2.osm.ready(function () {
+    db2.osm.get(id, function (err, elm) {
       if (err) throw err
       console.log(elm)
+
+      db2.media.createReadStream('photo.png').pipe(process.stdout)
     })
   })
 }
@@ -107,6 +109,7 @@ outputs
 
 ```
 { type: 'node', lat: 12.0, lon: 53.0, tags: { foo: 'bar' } }
+media data!
 ```
 
 ## API
