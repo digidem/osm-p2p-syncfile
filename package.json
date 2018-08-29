@@ -1,0 +1,40 @@
+{
+  "name": "p2p-syncfile",
+  "version": "0.0.0",
+  "description": "Replicate OSM data and media using a sneakernet-style sync file. ",
+  "main": "index.js",
+  "directories": {
+    "test": "test"
+  },
+  "dependencies": {
+    "osm-p2p": "^2.0.0",
+    "safe-fs-blob-store": "^1.0.2",
+    "tmp": "^0.0.33"
+  },
+  "devDependencies": {
+    "standard": "^12.0.0",
+    "tape": "^4.9.1"
+  },
+  "scripts": {
+    "test": "tape test/*.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/noffle/p2p-syncfile.git"
+  },
+  "keywords": [
+    "p2p",
+    "sync",
+    "sneakernet",
+    "osm",
+    "replicate",
+    "replication",
+    "media"
+  ],
+  "author": "noffle <sww@eight45.net>",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/noffle/p2p-syncfile/issues"
+  },
+  "homepage": "https://github.com/noffle/p2p-syncfile#readme"
+}
