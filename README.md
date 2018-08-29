@@ -17,6 +17,172 @@ To support constant time random-access reads, appends, and deletions, an index f
 
 > work-in-progress
 
+## Example
+
+Let's create two osm-p2p databases and sync a node and photo between them using an intermediary syncfile. Normally this syncfile would be on a USB key, and each osm-p2p database would be on a separate device.
+
+```js
+var Osm = require('osm-p2p')
+var Blob = require('safe-fs-blob-store')
+var Syncfile = require('osm-p2p-syncfile')
+
+function createDb (n) {
+  var osm = Osm('/tmp/foo-' + n + '.p2p')
+  var media = Blob('/tmp/foo-' + n + '.media')
+  return { osm: osm, media: media }
+}
+
+var db1 = createDb(1)
+var db2 = createDb(
+var syncfile = new Syncfile('/tmp/sync1', '/tmp')
+
+var id
+
+var node = { type: 'node', lat: 12.0, lon: 53.0, tags: { foo: 'bar' }}
+
+db1.osm.put(node, function (err, node) {
+  if (err) throw err
+  
+  id = node.value.id
+  
+  db1.ready(function () {
+    db.media.createWriteStream(function () {
+      syncfile.once('ready', sync)
+    }).end('media data!')
+  })
+})
+
+function sync () {
+  // 1. sync db1 to the syncfile
+  replicate(
+    db1.osm.replicate(),
+    syncfile.createDatabaseReplicationStream(),
+    function (err) {
+      if (err) throw err
+      
+      syncfile.close(function () {
+        var syncfile = new Syncfile('/tmp/sync1', '/tmp')
+        syncfile.once('ready', function () {
+          // 2. sync the syncfile to db2
+          replicate(
+            syncfile.createDatabaseReplicationStream(),
+            db1.osm.replicate(),
+            function (err) {
+              if (err) throw err
+              check()
+            })
+        })
+      })
+    })
+}
+
+function check () {
+  db2.ready(function () {
+    db2.get(id, function (err, elm) {
+      if (err) throw err
+      console.log(elm)
+    })
+  })
+}
+
+function replicate (stream1, stream2, cb) {
+  stream1.on('end', done)
+  stream1.on('error, done)
+  stream2.on('end', done)
+  stream2.on('error, done)
+
+  stream1.pipe(stream2).pipe(stream1)
+  
+  var pending = 2
+  var error
+  function done (err) {
+    error = err || error
+    if (!--pending) cb(err)
+  }
+}
+
+function createDb (n) {
+  var osm = Osm('/tmp/foo-' + n + '.p2p')
+  var media = Blob('/tmp/foo-' + n + '.media')
+  return { osm: osm, media: media }
+}
+
+var db1 = createDb(1)
+var db2 = createDb(2)
+var syncfile = new Syncfile('/tmp/sync1', '/tmp')
+
+var id
+
+var node = { type: 'node', lat: 12.0, lon: 53.0, tags: { foo: 'bar' } }
+
+db1.osm.put(node, function (err, node) {
+  if (err) throw err
+
+  id = node.value.id
+
+  db1.ready(function () {
+    db1.media.createWriteStream(function () {
+      syncfile.once('ready', sync)
+    }).end('media data!')
+  })
+})
+
+function sync () {
+  // 1. sync db1 to the syncfile
+  replicate(
+    db1.osm.replicate(),
+    syncfile.createDatabaseReplicationStream(),
+    function (err) {
+      if (err) throw err
+
+      syncfile.close(function () {
+        var syncfile = new Syncfile('/tmp/sync1', '/tmp')
+        syncfile.once('ready', function () {
+          // 2. sync the syncfile to db2
+          replicate(
+            syncfile.createDatabaseReplicationStream(),
+            db1.osm.replicate(),
+            function (err) {
+              if (err) throw err
+              check()
+            })
+        })
+      })
+    })
+}
+
+function check () {
+  db2.ready(function () {
+    db2.get(id, function (err, elm) {
+      if (err) throw err
+      console.log(elm)
+    })
+  })
+}
+
+function replicate (stream1, stream2, cb) {
+  stream1.on('end', done)
+  stream1.on('error', done)
+  stream2.on('end', done)
+  stream2.on('error', done)
+
+  stream1.pipe(stream2).pipe(stream1)
+
+  var pending = 2
+  var error
+  function done (err) {
+    error = err || error
+    if (!--pending) cb(err)
+  }
+}
+```
+
+outputs
+
+```
+{ type: 'node', lat: 12.0, lon: 53.0, tags: { foo: 'bar' } }
+```
+
 ## API
 
 ```js
@@ -41,11 +207,11 @@ Event fired once the syncfile has been found, and the p2p database extracted to 
 
 Event fired if setup of the syncfile fails. An error `err` is included.
 
-### var ms = syncfile.replicateMedia()
+### var ms = syncfile.createMediaReplicationStream()
 
 Returns a duplex replication stream for media. Compatible with [blob-store-replication-stream](https://github.com/noffle/blob-store-replication-stream).
 
-### var ps = syncfile.replicateDatabase()
+### var ps = syncfile.createDatabaseReplicationStream()
 
 Returns a duplex replication stream for the database. Compatible with an [osm-p2p-db](https://github.com/digidem/osm-p2p-db) replication stream.
 
