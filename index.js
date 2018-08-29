@@ -1,16 +1,14 @@
 var fs = require('fs')
 var EventEmitter = require('events').EventEmitter
 var inherits = require('inherits')
+var IndexedTarball = require('indexed-tarball')
 
 module.exports = Syncfile
 
 function Syncfile (filepath, tmpdir, opts) {
   if (!(this instanceof Syncfile)) return new Syncfile(filepath, tmpdir, opts)
 
-  if (!fs.existsSync(filepath)) {
-    // touch file
-    fs.writeFileSync(filepath, '', 'utf8')
-  }
+  this.tarball = new IndexedTarball(filepath, opts)
 
   process.nextTick(this.emit.bind(this, 'ready'))
 }
