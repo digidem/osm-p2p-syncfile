@@ -19,7 +19,9 @@ To support constant time random-access reads, appends, and deletions, an index f
 
 ## API
 
+```js
 var Syncfile = require('osm-p2p-syncfile')
+```
 
 ### var syncfile = new Syncfile(filepath, tmpdir, [, opts])
 
@@ -35,13 +37,17 @@ Use whatever extension you'd like; underneath it's a [TAR][tar] archive. The fil
 
 Event fired once the syncfile has been found, and the p2p database extracted to `tmpdir`. At this point the following APIs can be safely used.
 
+### syncfile.on('error', fn)
+
+Event fired if setup of the syncfile fails. An error `err` is included.
+
 ### var ms = syncfile.replicateMedia()
 
-Returns a duplex replication stream for media.
+Returns a duplex replication stream for media. Compatible with [blob-store-replication-stream](https://github.com/noffle/blob-store-replication-stream).
 
 ### var ps = syncfile.replicateDatabase()
 
-Returns a duplex replication stream for the database.
+Returns a duplex replication stream for the database. Compatible with an [osm-p2p-db](https://github.com/digidem/osm-p2p-db) replication stream.
 
 ### syncfile.close(cb)
 
