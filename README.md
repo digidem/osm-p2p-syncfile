@@ -33,81 +33,6 @@ function createDb (n) {
 }
 
 var db1 = createDb(1)
-var db2 = createDb(
-var syncfile = new Syncfile('/tmp/sync1', '/tmp')
-
-var id
-
-var node = { type: 'node', lat: 12.0, lon: 53.0, tags: { foo: 'bar' }}
-
-db1.osm.put(node, function (err, node) {
-  if (err) throw err
-  
-  id = node.value.id
-  
-  db1.ready(function () {
-    db.media.createWriteStream(function () {
-      syncfile.once('ready', sync)
-    }).end('media data!')
-  })
-})
-
-function sync () {
-  // 1. sync db1 to the syncfile
-  replicate(
-    db1.osm.replicate(),
-    syncfile.createDatabaseReplicationStream(),
-    function (err) {
-      if (err) throw err
-      
-      syncfile.close(function () {
-        var syncfile = new Syncfile('/tmp/sync1', '/tmp')
-        syncfile.once('ready', function () {
-          // 2. sync the syncfile to db2
-          replicate(
-            syncfile.createDatabaseReplicationStream(),
-            db1.osm.replicate(),
-            function (err) {
-              if (err) throw err
-              check()
-            })
-        })
-      })
-    })
-}
-
-function check () {
-  db2.ready(function () {
-    db2.get(id, function (err, elm) {
-      if (err) throw err
-      console.log(elm)
-    })
-  })
-}
-
-function replicate (stream1, stream2, cb) {
-  stream1.on('end', done)
-  stream1.on('error, done)
-  stream2.on('end', done)
-  stream2.on('error, done)
-
-  stream1.pipe(stream2).pipe(stream1)
-  
-  var pending = 2
-  var error
-  function done (err) {
-    error = err || error
-    if (!--pending) cb(err)
-  }
-}
-
-function createDb (n) {
-  var osm = Osm('/tmp/foo-' + n + '.p2p')
-  var media = Blob('/tmp/foo-' + n + '.media')
-  return { osm: osm, media: media }
-}
-
-var db1 = createDb(1)
 var db2 = createDb(2)
 var syncfile = new Syncfile('/tmp/sync1', '/tmp')
 
@@ -175,6 +100,7 @@ function replicate (stream1, stream2, cb) {
     if (!--pending) cb(err)
   }
 }
+
 ```
 
 outputs
