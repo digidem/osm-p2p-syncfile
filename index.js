@@ -87,7 +87,7 @@ Syncfile.prototype.createDatabaseReplicationStream = function () {
       return t
   }
 
-  return this._osm.log.replicate()
+  return this._osm.log.replicate({live: false})
 }
 
 Syncfile.prototype.close = function (cb) {
@@ -106,8 +106,10 @@ Syncfile.prototype.close = function (cb) {
   }
 
   this._state = State.CLOSED
-  this._osm.close(function () {
-    rimraf(self._syncdir, cb)
+  this._osm.ready(function () {
+    self._osm.close(function (err) {
+      rimraf(self._syncdir, cb)
+    })
   })
 }
 
