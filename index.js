@@ -70,24 +70,29 @@ Syncfile.prototype.createMediaReplicationStream = function () {
 }
 
 Syncfile.prototype.createDatabaseReplicationStream = function () {
-  var t = through()
+  var t
 
   switch (this._state) {
     case State.INIT:
+      t = through()
       process.nextTick(t.emit.bind(t, 'error', new Error('syncfile is still opening')))
       return t
     case State.ERROR:
+      t = through()
       process.nextTick(t.emit.bind(t, 'error', this._error))
       return t
     case State.CLOSED:
+      t = through()
       process.nextTick(t.emit.bind(t, 'error', new Error('syncfile is closed')))
       return t
   }
 
-  return t
+  return this._osm.log.replicate()
 }
 
 Syncfile.prototype.close = function (cb) {
+  var self = this
+
   switch (this._state) {
     case State.INIT:
       process.nextTick(cb, new Error('syncfile is still opening'))
@@ -101,15 +106,18 @@ Syncfile.prototype.close = function (cb) {
   }
 
   this._state = State.CLOSED
-  rimraf(this._tmpdir, cb)
+  this._osm.close(function () {
+    rimraf(self._tmpdir, cb)
+  })
 }
 
 Syncfile.prototype._extractOsm = function (cb) {
   cb = once(cb)
+  var self = this
 
   // 1. decide on tmp directory
-  var tmpdir = path.join(this._tmpdir, 'osm-p2p-syncfile-' + Math.random().toString().substring(2))
-  this._tmpdir = tmpdir
+  var dbdir = path.join(this._tmpdir, 'osm-p2p-syncfile-' + Math.random().toString().substring(2))
+  this._dbdir = dbdir
 
   // 2. check if p2p db exists in archive
   this.tarball.list(function (err, files) {
@@ -122,7 +130,7 @@ Syncfile.prototype._extractOsm = function (cb) {
   })
 
   function freshDb () {
-    mkdirp(tmpdir, openDb)
+    mkdirp(dbdir, openDb)
   }
 
   function existingDb () {
@@ -131,13 +139,12 @@ Syncfile.prototype._extractOsm = function (cb) {
     var rs = this.tarball.read('osm-p2p-db.tar')
     rs.on('error', cb)
     // TODO: pipe into tar-stream#extract and then pipe that to a directory(?)
+    // TODO: tarball#pop the db off
   }
 
   function openDb (err) {
     if (err) return cb(err)
+    self._osm = Osm(dbdir)
     cb()
-    // 3. open osm-p2p from fs
-    // 4. tarball#pop the db off
-    // 5. cb
   }
 }

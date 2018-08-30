@@ -54,21 +54,21 @@ test('replicate osm-p2p to syncfile', function (t) {
     function sync (err) {
       t.error(err, 'syncfile setup ok')
       var d = syncfile.createDatabaseReplicationStream()
-      d.once('error', function (err) { t.error(err) })
-
-      replicate(osm.log.replicate(), d, check)
+      var r = osm.log.replicate()
+      replicate(r, d, check)
     }
 
     function check (err) {
       t.error(err, 'replication ok')
 
-      var tmpOsm = Osm(syncfile._tmpdir)
+      var tmpOsm = syncfile._osm
       tmpOsm.ready(function () {
         tmpOsm.get(nodeId, function (err, heads) {
           t.error(err, 'get ok')
           t.equal(typeof heads, 'object', 'got heads')
           t.equals(Object.keys(heads).length, 1)
           t.deepEquals(heads[nodeVersion], node)
+
           t.end()
         })
       })
