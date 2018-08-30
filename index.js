@@ -36,6 +36,10 @@ Syncfile.prototype.createDatabaseReplicationStream = function () {
   // TODO: if this._error, raise error on stream on next-tick
 }
 
+Syncfile.prototype.close = function (cb) {
+  if (cb) process.nextTick(cb)
+}
+
 Syncfile.prototype._extractOsm = function (cb) {
   cb = once(cb)
 

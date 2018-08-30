@@ -13,7 +13,7 @@ test('bad creation', function (t) {
   })
 })
 
-test('create + ready + syncfile exists', function (t) {
+test('create + ready + syncfile exists + close', function (t) {
   tmp.dir(function (err, dir, cleanup) {
     t.error(err)
 
@@ -23,7 +23,12 @@ test('create + ready + syncfile exists', function (t) {
     syncfile.ready(function () {
       t.ok(fs.existsSync(filepath))
       t.equal(fs.readdirSync(dir).length, 2)
-      t.end()
+      t.notEqual(fs.readdirSync(dir).indexOf('sync.tar'), -1)
+
+      syncfile.close(function (err) {
+        t.error(err)
+        t.end()
+      })
     })
   })
 })
