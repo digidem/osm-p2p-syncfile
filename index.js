@@ -11,70 +11,97 @@ var readyify = require('./lib/readyify')
 
 module.exports = Syncfile
 
+var State = {
+  INIT:   1,
+  READY:  2,
+  ERROR:  3,
+  CLOSED: 4
+}
+
 function Syncfile (filepath, tmpdir, opts) {
   if (!(this instanceof Syncfile)) return new Syncfile(filepath, tmpdir, opts)
 
+  this._state = State.INIT
   this._tmpdir = tmpdir
-  this._closed = false
 
   var self = this
   this._ready = readyify(function (done) {
     try {
       self.tarball = new IndexedTarball(filepath, opts)
-      self._extractOsm(done)
+      self._extractOsm(function (err) {
+        if (err) {
+          self._state = State.ERROR
+          self._error = err
+          done(err)
+        } else {
+          self._state = State.READY
+          done()
+        }
+      })
     } catch (e) {
+      self._state = State.ERROR
+      self._error = e
       done(e)
     }
   })
 }
 
 Syncfile.prototype.ready = function (cb) {
-  this._ready(cb)
+  if (this._state === State.CLOSED) return process.nextTick(cb, new Error('syncfile is closed'))
+  else this._ready(cb)
 }
 
 Syncfile.prototype.createMediaReplicationStream = function () {
   var t = through()
-  if (this._closed) {
-    process.nextTick(t.emit.bind(t, 'error', new Error('syncfile is already closed')))
-    return t
+
+  switch (this._state) {
+    case State.INIT:
+      process.nextTick(t.emit.bind(t, 'error', new Error('syncfile is still opening')))
+      return t
+    case State.ERROR:
+      process.nextTick(t.emit.bind(t, 'error', this._error))
+      return t
+    case State.CLOSED:
+      process.nextTick(t.emit.bind(t, 'error', new Error('syncfile is closed')))
+      return t
   }
-  if (this._ready.error) {
-    process.nextTick(t.emit.bind(t, 'error', this._ready.error))
-    return t
-  }
-  if (!this._ready.ready) {
-    process.nextTick(t.emit.bind(t, 'error', new Error('syncfile is not ready yet; use the syncfile.ready(cb) API')))
-    return t
-  }
+
   return t
 }
 
 Syncfile.prototype.createDatabaseReplicationStream = function () {
   var t = through()
-  if (this._closed) {
-    process.nextTick(t.emit.bind(t, 'error', new Error('syncfile is already closed')))
-    return t
+
+  switch (this._state) {
+    case State.INIT:
+      process.nextTick(t.emit.bind(t, 'error', new Error('syncfile is still opening')))
+      return t
+    case State.ERROR:
+      process.nextTick(t.emit.bind(t, 'error', this._error))
+      return t
+    case State.CLOSED:
+      process.nextTick(t.emit.bind(t, 'error', new Error('syncfile is closed')))
+      return t
   }
-  if (this._ready.error) {
-    process.nextTick(t.emit.bind(t, 'error', this._ready.error))
-    return t
-  }
-  if (!this._ready.ready) {
-    process.nextTick(t.emit.bind(t, 'error', new Error('syncfile is not ready yet; use the syncfile.ready(cb) API')))
-    return t
-  }
+
   return t
 }
 
 Syncfile.prototype.close = function (cb) {
-  if (this._closed) return cb(new Error('syncfile is already closed'))
-  if (this._ready.error) return cb(this._ready.error)
-  var self = this
-  this._ready(function (err) {
-    if (err) return cb(err)
-    self._closed = true
-    rimraf(self._tmpdir, cb)
-  })
+  switch (this._state) {
+    case State.INIT:
+      process.nextTick(cb, new Error('syncfile is still opening'))
+      return
+    case State.ERROR:
+      process.nextTick(cb, this._error)
+      return
+    case State.CLOSED:
+      process.nextTick(cb, new Error('syncfile is already closed'))
+      return
+  }
+
+  this._state = State.CLOSED
+  rimraf(this._tmpdir, cb)
 }
 
 Syncfile.prototype._extractOsm = function (cb) {
@@ -99,11 +126,11 @@ Syncfile.prototype._extractOsm = function (cb) {
   }
 
   function existingDb () {
-    // 3. find p2p archive in db (last file) and decompress through tar-stream
+    // find p2p archive in db (last file) and decompress through tar-stream
     // and finally to disk
     var rs = this.tarball.read('osm-p2p-db.tar')
     rs.on('error', cb)
-    rs.pipe(fs.createWriteStream(tmpdir, openDb))
+    // TODO: pipe into tar-stream#extract and then pipe that to a directory(?)
   }
 
   function openDb (err) {
