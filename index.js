@@ -1,5 +1,3 @@
-var EventEmitter = require('events').EventEmitter
-var inherits = require('inherits')
 var IndexedTarball = require('indexed-tarball')
 
 module.exports = Syncfile
@@ -14,5 +12,3 @@ function Syncfile (filepath, tmpdir, opts) {
     process.nextTick(this.emit.bind(this, 'error', e))
   }
 }
-
-inherits(Syncfile, EventEmitter)

@@ -128,14 +128,6 @@ Use whatever extension you'd like; underneath it's a [TAR][tar] archive. The fil
 
 - `multifile`: Allow the syncfile to span multiple archives once a 4 gigabyte limit is reached. The below API works exactly the same, but will be multifile-aware.
 
-### syncfile.on('ready', fn)
-
-Event fired once the syncfile has been found, and the p2p database extracted to `tmpdir`. At this point the following APIs can be safely used.
-
-### syncfile.on('error', fn)
-
-Event fired if setup of the syncfile fails. An error `err` is included.
-
 ### var ms = syncfile.createMediaReplicationStream()
 
 Returns a duplex replication stream for media. Compatible with [blob-store-replication-stream](https://github.com/noffle/blob-store-replication-stream).
