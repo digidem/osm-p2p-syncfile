@@ -47,8 +47,9 @@ db1.osm.put(node, function (err, node) {
 
   db1.ready(function () {
     db1.media.createWriteStream('photo.png', function () {
-      syncfile.once('ready', sync)
-    }).end('media data!')
+      syncfile.ready(sync)
+    })
+      .end('media data!')
   })
 })
 
@@ -62,7 +63,7 @@ function sync () {
 
       syncfile.close(function () {
         var syncfile = new Syncfile('/tmp/sync1', '/tmp')
-        syncfile.once('ready', function () {
+        syncfile.ready(function () {
           // 2. sync the syncfile to db2
           replicate(
             syncfile.createDatabaseReplicationStream(),
@@ -81,7 +82,6 @@ function check () {
     db2.osm.get(id, function (err, elm) {
       if (err) throw err
       console.log(elm)
-
       db2.media.createReadStream('photo.png').pipe(process.stdout)
     })
   })
@@ -127,6 +127,12 @@ Use whatever extension you'd like; underneath it's a [TAR][tar] archive. The fil
 `opts` is an optional object. Valid properties for `opts` include:
 
 - `multifile`: Allow the syncfile to span multiple archives once a 4 gigabyte limit is reached. The below API works exactly the same, but will be multifile-aware.
+
+### syncfile.ready(cb)
+
+Call `cb` once the syncfile is ready to perform replication. If the syncfile is already ready, `cb` is called immediately.
+
+If setting up the syncfile was not successful, `cb` will be called as `cb(err)`.
 
 ### var ms = syncfile.createMediaReplicationStream()
 

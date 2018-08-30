@@ -7,13 +7,9 @@ var Syncfile = require('..')
 test('bad creation', function (t) {
   var syncfile = new Syncfile(null, null)
 
-  syncfile.on('error', function (err) {
+  syncfile.ready(function (err) {
     t.ok(err instanceof Error)
     t.end()
-  })
-
-  syncfile.on('ready', function () {
-    t.fail()
   })
 })
 
@@ -24,7 +20,7 @@ test('create + ready + syncfile exists', function (t) {
     var filepath = path.join(dir, 'sync.tar')
     var syncfile = Syncfile(filepath, dir)
 
-    syncfile.once('ready', function () {
+    syncfile.ready(function () {
       t.ok(fs.existsSync(filepath))
       t.equal(fs.readdirSync(dir).length, 2)
       t.end()
