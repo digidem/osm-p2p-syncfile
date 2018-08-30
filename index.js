@@ -107,7 +107,7 @@ Syncfile.prototype.close = function (cb) {
 
   this._state = State.CLOSED
   this._osm.close(function () {
-    rimraf(self._tmpdir, cb)
+    rimraf(self._syncdir, cb)
   })
 }
 
@@ -116,8 +116,8 @@ Syncfile.prototype._extractOsm = function (cb) {
   var self = this
 
   // 1. decide on tmp directory
-  var dbdir = path.join(this._tmpdir, 'osm-p2p-syncfile-' + Math.random().toString().substring(2))
-  this._dbdir = dbdir
+  var syncdir = path.join(this._tmpdir, 'osm-p2p-syncfile-' + Math.random().toString().substring(2))
+  this._syncdir = syncdir
 
   // 2. check if p2p db exists in archive
   this.tarball.list(function (err, files) {
@@ -130,7 +130,7 @@ Syncfile.prototype._extractOsm = function (cb) {
   })
 
   function freshDb () {
-    mkdirp(dbdir, openDb)
+    mkdirp(syncdir, openDb)
   }
 
   function existingDb () {
@@ -144,7 +144,7 @@ Syncfile.prototype._extractOsm = function (cb) {
 
   function openDb (err) {
     if (err) return cb(err)
-    self._osm = Osm(dbdir)
-    cb()
+    self._osm = Osm(path.join(syncdir, 'osm'))
+    self._osm.ready(cb)
   }
 }
