@@ -2,7 +2,8 @@ var test = require('tape')
 var path = require('path')
 var tmp = require('tmp')
 var fs = require('fs')
-var Osm = require('osm-p2p-mem')
+var OsmMem = require('osm-p2p-mem')
+var Osm = require('osm-p2p')
 var Syncfile = require('..')
 
 test('try to replicate before ready', function (t) {
@@ -30,11 +31,17 @@ test('replicate osm-p2p to syncfile', function (t) {
   tmp.dir(function (err, dir, cleanup) {
     t.error(err)
 
-    var osm = Osm()
+    var osm = OsmMem()
     var syncfile
+    var nodeId
+    var nodeVersion
+    var node
 
-    osm.create({ type: 'node', lat: 1, lon: 1, tags: { foo: 'bar' } }, function (err) {
+    osm.create({ type: 'node', lat: 1, lon: 1, tags: { foo: 'bar' } }, function (err, id, theNode) {
       t.error(err, 'node creation ok')
+      nodeId = id
+      nodeVersion = theNode.key
+      node = theNode.value.v
       setup()
     })
 
@@ -54,8 +61,17 @@ test('replicate osm-p2p to syncfile', function (t) {
 
     function check (err) {
       t.error(err, 'replication ok')
-      t.equals(fs.readdirSync(syncfile._tmpdir).length, 1, 'tmpdir has db')
-      t.end()
+
+      var tmpOsm = Osm(syncfile._tmpdir)
+      tmpOsm.ready(function () {
+        tmpOsm.get(nodeId, function (err, heads) {
+          t.error(err, 'get ok')
+          t.equal(typeof heads, 'object', 'got heads')
+          t.equals(Object.keys(heads).length, 1)
+          t.deepEquals(heads[nodeVersion], node)
+          t.end()
+        })
+      })
     }
   })
 })
