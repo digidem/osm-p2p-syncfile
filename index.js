@@ -4,6 +4,7 @@ var Osm = require('osm-p2p')
 var path = require('path')
 var once = require('once')
 var fs = require('fs')
+var through = require('through2')
 var readyify = require('./lib/readyify')
 
 module.exports = Syncfile
@@ -29,11 +30,29 @@ Syncfile.prototype.ready = function (cb) {
 }
 
 Syncfile.prototype.createMediaReplicationStream = function () {
-  // TODO: if this._error, raise error on stream on next-tick
+  var t = through()
+  if (this._ready.error) {
+    process.nextTick(t.emit.bind(t, 'error', this._ready.error))
+    return t
+  }
+  if (!this._ready.ready) {
+    process.nextTick(t.emit.bind(t, 'error', new Error('syncfile is not ready yet; use the syncfile.ready(cb) API')))
+    return t
+  }
+  return t
 }
 
 Syncfile.prototype.createDatabaseReplicationStream = function () {
-  // TODO: if this._error, raise error on stream on next-tick
+  var t = through()
+  if (this._ready.error) {
+    process.nextTick(t.emit.bind(t, 'error', this._ready.error))
+    return t
+  }
+  if (!this._ready.ready) {
+    process.nextTick(t.emit.bind(t, 'error', new Error('syncfile is not ready yet; use the syncfile.ready(cb) API')))
+    return t
+  }
+  return t
 }
 
 Syncfile.prototype.close = function (cb) {
