@@ -13,7 +13,7 @@ test('bad creation', function (t) {
   })
 })
 
-test('create + ready + syncfile exists + close', function (t) {
+test('can initialize with new syncfile', function (t) {
   tmp.dir(function (err, dir, cleanup) {
     t.error(err)
 
@@ -30,5 +30,35 @@ test('create + ready + syncfile exists + close', function (t) {
         t.end()
       })
     })
+  })
+})
+
+test('can initialize with an existing syncfile', function (t) {
+  tmp.dir(function (err, dir, cleanup) {
+    t.error(err)
+
+    var filepath = path.join(dir, 'sync.tar')
+
+    setupAndClose(function (err) {
+      t.error(err)
+      t.ok(fs.existsSync(filepath))
+      t.equal(fs.readdirSync(dir).length, 1)
+      t.notEqual(fs.readdirSync(dir).indexOf('sync.tar'), -1)
+
+      setupAndClose(function (err) {
+        t.error(err)
+        t.ok(fs.existsSync(filepath))
+        t.equal(fs.readdirSync(dir).length, 1)
+        t.notEqual(fs.readdirSync(dir).indexOf('sync.tar'), -1)
+        t.end()
+      })
+    })
+
+    function setupAndClose (cb) {
+      var syncfile = Syncfile(filepath, dir)
+      syncfile.ready(function () {
+        syncfile.close(cb)
+      })
+    }
   })
 })
