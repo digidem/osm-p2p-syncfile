@@ -166,8 +166,8 @@ Syncfile.prototype._extractOsm = function (cb) {
 
     pump(rs, ex, function (err) {
       debug('tar stream finish')
-      // TODO: tarball#pop the db off
-      cb(err)
+      if (err) cb(err)
+      else self.tarball.pop(cb)
     })
 
     ex.on('entry', function (header, stream, next) {
