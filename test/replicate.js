@@ -122,13 +122,13 @@ test('replicate osm-p2p to new syncfile, close, then reopen & check', function (
       var d = syncfile.createDatabaseReplicationStream()
       var r = osm.log.replicate({live: false})
       replicate(r, d, function (err) {
-        t.error(err, 'replication ok')
+        t.error(err, 'second replication ok')
         syncfile.close(check)
       })
     }
 
     function check (err) {
-      t.error(err, 'replication ok')
+      t.error(err, 'second syncfile close ok')
 
       osm.ready(function () {
         osm.get(nodeId, function (err, heads) {

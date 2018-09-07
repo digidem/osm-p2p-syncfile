@@ -9,6 +9,7 @@ var rimraf = require('rimraf')
 var mkdirp = require('mkdirp')
 var readdirp = require('readdirp')
 var pump = require('pump')
+var debug = require('debug')('osm-p2p-syncfile')
 var readyify = require('./lib/readyify')
 
 module.exports = Syncfile
@@ -137,9 +138,9 @@ Syncfile.prototype.close = function (cb) {
     // 3. write all to the tar file
     var twrite = through.obj(function (file, _, next) {
       if (file.path === 'osm-p2p-db.tar') return next()
-      console.log('file', file.fullPath, file.stat.size)
+      debug('file', file.fullPath, file.stat.size)
       var entry = pack.entry({ name: file.path, size: file.stat.size }, function (err) {
-        console.log('wrote', file.path)
+        debug('wrote', file.path)
         if (err) return next(err)
         else next()
       })
@@ -148,14 +149,14 @@ Syncfile.prototype.close = function (cb) {
 
     // 4. pipe them together
     pump(rd, twrite, function (err) {
-      console.log('finalizing')
+      debug('finalizing')
       if (!err) pack.finalize()
       else cb(err)
     })
     pump(pack, tcount, fs.createWriteStream(tarPath), function (err) {
       if (err) return cleanup(err)
 
-      console.log('done', tarSize)
+      debug('done', tarPath, tarSize)
 
       // 5. write tar file to self.tarball.append()
       self.tarball.append('osm-p2p-db.tar', fs.createReadStream(tarPath), tarSize, cleanup)
@@ -181,27 +182,52 @@ Syncfile.prototype._extractOsm = function (cb) {
   var syncdir = path.join(this._tmpdir, 'osm-p2p-syncfile-' + Math.random().toString().substring(2))
   this._syncdir = syncdir
 
-  // 2. check if p2p db exists in archive
-  this.tarball.list(function (err, files) {
+  // 2. create tmp sync dir
+  mkdirp(syncdir, function (err) {
     if (err) return cb(err)
-    if (files.indexOf('osm-p2p-db.tar') === -1) {
-      freshDb()
-    } else {
-      existingDb()
-    }
-  })
 
-  function freshDb () {
-    mkdirp(syncdir, openDb)
-  }
+    // 3. check if p2p db exists in archive
+    self.tarball.list(function (err, files) {
+      if (err) return cb(err)
+      if (files.indexOf('osm-p2p-db.tar') === -1) {
+        openDb()
+      } else {
+        existingDb()
+      }
+    })
+  })
 
   function existingDb () {
     // find p2p archive in db (last file) and decompress through tar-stream
     // and finally to disk
-    var rs = this.tarball.read('osm-p2p-db.tar')
+    var rs = self.tarball.read('osm-p2p-db.tar')
     rs.on('error', cb)
-    // TODO: pipe into tar-stream#extract and then pipe that to a directory(?)
-    // TODO: tarball#pop the db off
+
+    // TODO(noffle): wrap this in a helper function: extract-tar-to-fs
+    var ex = tar.extract()
+
+    pump(rs, ex, function (err) {
+      debug('tar stream finish')
+      // TODO: tarball#pop the db off
+      cb(err)
+    })
+
+    ex.on('entry', function (header, stream, next) {
+      debug('extracting', header.name)
+      mkdirp(path.dirname(path.join(syncdir, 'osm', header.name)), function (err) {
+        if (err) return next(err)
+        var ws = fs.createWriteStream(path.join(syncdir, 'osm', header.name))
+        pump(stream, ws, function (err) {
+          debug('extracted', header.name)
+          next(err)
+        })
+      })
+    })
+
+    ex.on('finish', function () {
+      debug('tar finish')
+      openDb()
+    })
   }
 
   function openDb (err) {
