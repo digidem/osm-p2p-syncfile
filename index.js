@@ -7,15 +7,18 @@ var fs = require('fs')
 var through = require('through2')
 var rimraf = require('rimraf')
 var mkdirp = require('mkdirp')
+var readdirp = require('readdirp')
+var pump = require('pump')
 var readyify = require('./lib/readyify')
 
 module.exports = Syncfile
 
 var State = {
-  INIT:   1,
-  READY:  2,
-  ERROR:  3,
-  CLOSED: 4
+  INIT:    1,
+  READY:   2,
+  ERROR:   3,
+  CLOSING: 4,
+  CLOSED:  5
 }
 
 function Syncfile (filepath, tmpdir, opts) {
@@ -48,6 +51,7 @@ function Syncfile (filepath, tmpdir, opts) {
 
 Syncfile.prototype.ready = function (cb) {
   if (this._state === State.CLOSED) return process.nextTick(cb, new Error('syncfile is closed'))
+  else if (this._state === State.CLOSING) return process.nextTick(cb, new Error('syncfile is closed'))
   else this._ready(cb)
 }
 
@@ -62,6 +66,9 @@ Syncfile.prototype.createMediaReplicationStream = function () {
       process.nextTick(t.emit.bind(t, 'error', this._error))
       return t
     case State.CLOSED:
+      process.nextTick(t.emit.bind(t, 'error', new Error('syncfile is closed')))
+      return t
+    case State.CLOSING:
       process.nextTick(t.emit.bind(t, 'error', new Error('syncfile is closed')))
       return t
   }
@@ -85,12 +92,17 @@ Syncfile.prototype.createDatabaseReplicationStream = function () {
       t = through()
       process.nextTick(t.emit.bind(t, 'error', new Error('syncfile is closed')))
       return t
+    case State.CLOSING:
+      process.nextTick(t.emit.bind(t, 'error', new Error('syncfile is closed')))
+      return t
   }
 
   return this._osm.log.replicate({live: false})
 }
 
 Syncfile.prototype.close = function (cb) {
+  cb = once(cb)
+
   var self = this
 
   switch (this._state) {
@@ -103,14 +115,62 @@ Syncfile.prototype.close = function (cb) {
     case State.CLOSED:
       process.nextTick(cb, new Error('syncfile is already closed'))
       return
+    case State.CLOSING:
+      process.nextTick(cb, new Error('syncfile is already closed'))
+      return t
   }
 
-  this._state = State.CLOSED
+  this._state = State.CLOSING
+
   this._osm.ready(function () {
-    self._osm.close(function (err) {
-      rimraf(self._syncdir, cb)
+    // re-pack syncfile p2p-db dir into tarball
+    var tarPath = path.join(self._syncdir, 'osm-p2p-db.tar')
+    var tarSize = 0
+    var tcount = through(function (chunk, _, next) { tarSize += chunk.length; next(null, chunk) })
+
+    // 1. create new tar.pack() stream, to be piped to fs.createWriteStream inside self._syncdir
+    var pack = tar.pack()
+
+    // 2. recursively walk files in self._syncdir (skip new tar file)
+    var rd = readdirp({root: path.join(self._syncdir, 'osm')})
+
+    // 3. write all to the tar file
+    var twrite = through.obj(function (file, _, next) {
+      if (file.path === 'osm-p2p-db.tar') return next()
+      console.log('file', file.fullPath, file.stat.size)
+      var entry = pack.entry({ name: file.path, size: file.stat.size }, function (err) {
+        console.log('wrote', file.path)
+        if (err) return next(err)
+        else next()
+      })
+      pump(fs.createReadStream(file.fullPath), entry)
+    })
+
+    // 4. pipe them together
+    pump(rd, twrite, function (err) {
+      console.log('finalizing')
+      if (!err) pack.finalize()
+      else cb(err)
+    })
+    pump(pack, tcount, fs.createWriteStream(tarPath), function (err) {
+      if (err) return cleanup(err)
+
+      console.log('done', tarSize)
+
+      // 5. write tar file to self.tarball.append()
+      self.tarball.append('osm-p2p-db.tar', fs.createReadStream(tarPath), tarSize, cleanup)
     })
   })
+
+  // clean up tmp dir
+  function cleanup (err) {
+    self._osm.close(function (err2) {
+      rimraf(self._syncdir, function (err3) {
+        err = err || err2 || err3
+        cb(err)
+      })
+    })
+  }
 }
 
 Syncfile.prototype._extractOsm = function (cb) {
