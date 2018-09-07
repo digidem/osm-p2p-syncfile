@@ -57,7 +57,7 @@ function sync () {
   // 1. sync db1 to the syncfile
   replicate(
     db1.osm.replicate(),
-    syncfile.createDatabaseReplicationStream(),
+    syncfile.osm.log.replicate(),
     function (err) {
       if (err) throw err
 
@@ -66,7 +66,7 @@ function sync () {
         syncfile.ready(function () {
           // 2. sync the syncfile to db2
           replicate(
-            syncfile.createDatabaseReplicationStream(),
+            syncfile.osm.log.replicate(),
             db1.osm.replicate(),
             function (err) {
               if (err) throw err
@@ -141,6 +141,8 @@ Reference to an [osm-p2p-db][osm-p2p-db] database. Not set until `ready` fires.
 With this you can do things like replication, like `osm.log.replicate({live:false})`.
 
 ### syncfile.media
+
+> status: TODO
 
 Reference to an [abstract-blob-store](https://github.com/maxogden/abstract-blob-store). Not set until `ready` fires.
 
