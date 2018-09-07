@@ -134,13 +134,17 @@ Call `cb` once the syncfile is ready to perform replication. If the syncfile is 
 
 If setting up the syncfile was not successful, `cb` will be called as `cb(err)`.
 
-### var ms = syncfile.createMediaReplicationStream()
+### syncfile.osm
 
-Returns a duplex replication stream for media. Compatible with [blob-store-replication-stream](https://github.com/noffle/blob-store-replication-stream).
+Reference to an [osm-p2p-db][osm-p2p-db] database. Not set until `ready` fires.
 
-### var ps = syncfile.createDatabaseReplicationStream()
+With this you can do things like replication, like `osm.log.replicate({live:false})`.
 
-Returns a duplex replication stream for the database. Compatible with an [osm-p2p-db](https://github.com/digidem/osm-p2p-db) replication stream.
+### syncfile.media
+
+Reference to an [abstract-blob-store](https://github.com/maxogden/abstract-blob-store). Not set until `ready` fires.
+
+With this you can do things like replication, using [blob-store-replication-stream](https://github.com/noffle/blob-store-replication-stream).
 
 ### syncfile.close(cb)
 

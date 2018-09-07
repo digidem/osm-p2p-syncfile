@@ -56,51 +56,6 @@ Syncfile.prototype.ready = function (cb) {
   else this._ready(cb)
 }
 
-Syncfile.prototype.createMediaReplicationStream = function () {
-  var t = through()
-
-  switch (this._state) {
-    case State.INIT:
-      process.nextTick(t.emit.bind(t, 'error', new Error('syncfile is still opening')))
-      return t
-    case State.ERROR:
-      process.nextTick(t.emit.bind(t, 'error', this._error))
-      return t
-    case State.CLOSED:
-      process.nextTick(t.emit.bind(t, 'error', new Error('syncfile is closed')))
-      return t
-    case State.CLOSING:
-      process.nextTick(t.emit.bind(t, 'error', new Error('syncfile is closed')))
-      return t
-  }
-
-  return t
-}
-
-Syncfile.prototype.createDatabaseReplicationStream = function () {
-  var t
-
-  switch (this._state) {
-    case State.INIT:
-      t = through()
-      process.nextTick(t.emit.bind(t, 'error', new Error('syncfile is still opening')))
-      return t
-    case State.ERROR:
-      t = through()
-      process.nextTick(t.emit.bind(t, 'error', this._error))
-      return t
-    case State.CLOSED:
-      t = through()
-      process.nextTick(t.emit.bind(t, 'error', new Error('syncfile is closed')))
-      return t
-    case State.CLOSING:
-      process.nextTick(t.emit.bind(t, 'error', new Error('syncfile is closed')))
-      return t
-  }
-
-  return this._osm.log.replicate({live: false})
-}
-
 Syncfile.prototype.close = function (cb) {
   cb = once(cb)
 
@@ -122,8 +77,11 @@ Syncfile.prototype.close = function (cb) {
   }
 
   this._state = State.CLOSING
+  var osm = this.osm
+  this.osm = undefined
+  this.media = undefined
 
-  this._osm.ready(function () {
+  osm.ready(function () {
     // re-pack syncfile p2p-db dir into tarball
     var tarPath = path.join(self._syncdir, 'osm-p2p-db.tar')
     var tarSize = 0
@@ -165,7 +123,7 @@ Syncfile.prototype.close = function (cb) {
 
   // clean up tmp dir
   function cleanup (err) {
-    self._osm.close(function (err2) {
+    osm.close(function (err2) {
       rimraf(self._syncdir, function (err3) {
         err = err || err2 || err3
         cb(err)
@@ -232,7 +190,7 @@ Syncfile.prototype._extractOsm = function (cb) {
 
   function openDb (err) {
     if (err) return cb(err)
-    self._osm = Osm(path.join(syncdir, 'osm'))
-    self._osm.ready(cb)
+    self.osm = Osm(path.join(syncdir, 'osm'))
+    self.osm.ready(cb)
   }
 }

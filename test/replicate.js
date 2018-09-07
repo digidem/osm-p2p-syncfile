@@ -15,15 +15,8 @@ test('try to replicate before ready', function (t) {
     var filepath = path.join(dir, 'sync.tar')
     var syncfile = Syncfile(filepath, dir)
 
-    var m = syncfile.createMediaReplicationStream()
-    var d = syncfile.createDatabaseReplicationStream()
-
-    m.once('error', function (err) {
-      t.ok(err instanceof Error)
-    })
-    d.once('error', function (err) {
-      t.ok(err instanceof Error)
-    })
+    t.notOk(syncfile.osm, 'no this.osm yet')
+    t.notOk(syncfile.media, 'no this.media yet')
   })
 })
 
@@ -53,7 +46,7 @@ test('replicate osm-p2p to syncfile', function (t) {
 
     function sync (err) {
       t.error(err, 'syncfile setup ok')
-      var d = syncfile.createDatabaseReplicationStream()
+      var d = syncfile.osm.log.replicate({live: false})
       var r = osm.log.replicate({live: false})
       replicate(r, d, check)
     }
@@ -61,9 +54,8 @@ test('replicate osm-p2p to syncfile', function (t) {
     function check (err) {
       t.error(err, 'replication ok')
 
-      var tmpOsm = syncfile._osm
-      tmpOsm.ready(function () {
-        tmpOsm.get(nodeId, function (err, heads) {
+      syncfile.osm.ready(function () {
+        syncfile.osm.get(nodeId, function (err, heads) {
           t.error(err, 'get ok')
           t.equal(typeof heads, 'object', 'got heads')
           t.equals(Object.keys(heads).length, 1)
@@ -102,7 +94,7 @@ test('replicate osm-p2p to new syncfile, close, then reopen & check', function (
 
     function sync (err) {
       t.error(err, 'syncfile setup ok')
-      var d = syncfile.createDatabaseReplicationStream()
+      var d = syncfile.osm.log.replicate({live: false})
       var r = osm.log.replicate({live: false})
       replicate(r, d, function (err) {
         t.error(err, 'replication ok')
@@ -119,7 +111,7 @@ test('replicate osm-p2p to new syncfile, close, then reopen & check', function (
     function sync2 (err) {
       t.error(err, 'reopen ok')
       osm = OsmMem()
-      var d = syncfile.createDatabaseReplicationStream()
+      var d = syncfile.osm.log.replicate({live: false})
       var r = osm.log.replicate({live: false})
       replicate(r, d, function (err) {
         t.error(err, 'second replication ok')
