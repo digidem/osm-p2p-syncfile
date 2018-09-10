@@ -117,7 +117,8 @@ Syncfile.prototype.close = function (cb) {
       debug('done', tarPath, tarSize)
 
       // 5. write tar file to self.tarball.append()
-      self.tarball.append('osm-p2p-db.tar', fs.createReadStream(tarPath), tarSize, cleanup)
+      fs.createReadStream(tarPath)
+        .pipe(self.tarball.append('osm-p2p-db.tar', cleanup))
     })
   })
 
