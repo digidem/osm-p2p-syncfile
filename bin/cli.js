@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-var Syncfile = require('.')
+var Syncfile = require('..')
 var blobsync = require('blob-store-replication-stream')
 var os = require('os')
 var fs = require('fs')
