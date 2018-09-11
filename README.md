@@ -15,7 +15,9 @@ To support constant time random-access reads, appends, and deletions, an index f
 
 ## STATUS
 
-> work-in-progress
+> seems to work / not rigorously tested [yet]
+
+As in, unit tests and manual command line testing all seem to work OK, but I haven't integrated this into a real application yet.
 
 ## Example
 
@@ -151,6 +153,33 @@ With this you can do things like replication, using [blob-store-replication-stre
 Closes the syncfile. This is critical for cleanup, such as writing the changes to the p2p database extracted to `tmpdir` back to the syncfile.
 
 `cb` is called on completion.
+
+## CLI
+
+You can use this as a command line application as well:
+
+```
+npm install --global osm-p2p-syncfile
+```
+
+Usage:
+
+```
+USAGE: osm-p2p-syncfile COMMAND SYNCFILE [ARGS]
+
+Commands:
+  init [OSMDIR]     Create a new syncfile, optionally from an existing OSM
+                    directory.
+
+  add [FILE]        Add a file to the blob/media store.
+
+  list|ls           Print all blobs/media and all OSM data in the syncfile.
+
+  get [FILENAME]    Dump a blob/media file from the syncfile to stdout.
+
+  sync [SYNCFILE]   Sync this syncfile with another syncfile, exchanging all
+                    blobs/media and OSM data.
+```
 
 ## License
 
