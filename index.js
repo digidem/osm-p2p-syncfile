@@ -1,4 +1,5 @@
 var IndexedTarball = require('indexed-tarball')
+var itar = require('indexed-tarball-blob-store')
 var tar = require('tar-stream')
 var Osm = require('osm-p2p')
 var path = require('path')
@@ -149,7 +150,7 @@ Syncfile.prototype._extractOsm = function (cb) {
     self.tarball.list(function (err, files) {
       if (err) return cb(err)
       if (files.indexOf('osm-p2p-db.tar') === -1) {
-        openDb()
+        setupVars()
       } else {
         existingDb()
       }
@@ -185,13 +186,14 @@ Syncfile.prototype._extractOsm = function (cb) {
 
     ex.on('finish', function () {
       debug('tar finish')
-      openDb()
+      setupVars()
     })
   }
 
-  function openDb (err) {
+  function setupVars (err) {
     if (err) return cb(err)
     self.osm = Osm(path.join(syncdir, 'osm'))
+    self.media = itar({tarball: self.tarball})
     self.osm.ready(cb)
   }
 }

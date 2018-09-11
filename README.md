@@ -142,8 +142,6 @@ With this you can do things like replication, like `osm.log.replicate({live:fals
 
 ### syncfile.media
 
-> status: TODO
-
 Reference to an [abstract-blob-store](https://github.com/maxogden/abstract-blob-store). Not set until `ready` fires.
 
 With this you can do things like replication, using [blob-store-replication-stream](https://github.com/noffle/blob-store-replication-stream).

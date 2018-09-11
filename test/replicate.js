@@ -1,10 +1,14 @@
 var test = require('tape')
 var path = require('path')
 var tmp = require('tmp')
-var fs = require('fs')
 var OsmMem = require('osm-p2p-mem')
-var Osm = require('osm-p2p')
+var blob = require('abstract-blob-store')
+var blobReplicate = require('blob-store-replication-stream')
 var Syncfile = require('..')
+
+blob.prototype._list = function (cb) {
+  return process.nextTick(cb, null, Object.keys(this.data))
+}
 
 test('try to replicate before ready', function (t) {
   t.plan(3)
@@ -20,11 +24,12 @@ test('try to replicate before ready', function (t) {
   })
 })
 
-test('replicate osm-p2p to syncfile', function (t) {
+test('replicate media + osm-p2p to syncfile', function (t) {
   tmp.dir(function (err, dir, cleanup) {
     t.error(err)
 
     var osm = OsmMem()
+    var media = blob()
     var syncfile
     var nodeId
     var nodeVersion
@@ -41,18 +46,29 @@ test('replicate osm-p2p to syncfile', function (t) {
     function setup () {
       var filepath = path.join(dir, 'sync.tar')
       syncfile = Syncfile(filepath, dir)
-      syncfile.ready(sync)
+      syncfile.ready(addMedia)
+    }
+
+    function addMedia (err) {
+      t.error(err, 'syncfile setup ok')
+      media.createWriteStream('river.jpg', sync)
+        .end('<IMG DATA>')
     }
 
     function sync (err) {
-      t.error(err, 'syncfile setup ok')
+      t.error(err, 'add media ok')
       var d = syncfile.osm.log.replicate({live: false})
       var r = osm.log.replicate({live: false})
-      replicate(r, d, check)
+      replicate(r, d, function (err) {
+        t.error(err, 'replicate osm ok')
+        var d = blobReplicate(syncfile.media)
+        var r = blobReplicate(media)
+        replicate(d, r, check)
+      })
     }
 
     function check (err) {
-      t.error(err, 'replication ok')
+      t.error(err, 'replicate media ok')
 
       syncfile.osm.ready(function () {
         syncfile.osm.get(nodeId, function (err, heads) {
@@ -60,6 +76,11 @@ test('replicate osm-p2p to syncfile', function (t) {
           t.equal(typeof heads, 'object', 'got heads')
           t.equals(Object.keys(heads).length, 1)
           t.deepEquals(heads[nodeVersion], node)
+
+          syncfile.media.exists('river.jpg', function (err, exists) {
+            t.error(err, 'exists ok')
+            t.ok(exists, 'river.jpg exists')
+          })
 
           syncfile.close(t.end.bind(t))
         })
