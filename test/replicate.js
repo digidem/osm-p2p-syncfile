@@ -4,6 +4,7 @@ var tmp = require('tmp')
 var OsmMem = require('osm-p2p-mem')
 var blob = require('abstract-blob-store')
 var blobReplicate = require('blob-store-replication-stream')
+var collect = require('collect-stream')
 var Syncfile = require('..')
 
 blob.prototype._list = function (cb) {
@@ -89,12 +90,13 @@ test('replicate media + osm-p2p to syncfile', function (t) {
   })
 })
 
-test('replicate osm-p2p to new syncfile, close, then reopen & check', function (t) {
+test('replicate osm-p2p + media to new syncfile, close, then reopen & check', function (t) {
   tmp.dir(function (err, dir, cleanup) {
     t.error(err)
 
     var filepath = path.join(dir, 'sync.tar')
     var osm = OsmMem()
+    var media = blob()
     var syncfile
     var nodeId
     var nodeVersion
@@ -110,16 +112,27 @@ test('replicate osm-p2p to new syncfile, close, then reopen & check', function (
 
     function setup () {
       syncfile = Syncfile(filepath, dir)
-      syncfile.ready(sync)
+      syncfile.ready(addMedia)
+    }
+
+    function addMedia (err) {
+      t.error(err, 'syncfile setup ok')
+      media.createWriteStream('river.jpg', sync)
+        .end('<IMG DATA>')
     }
 
     function sync (err) {
-      t.error(err, 'syncfile setup ok')
+      t.error(err, 'add media ok')
       var d = syncfile.osm.log.replicate({live: false})
       var r = osm.log.replicate({live: false})
       replicate(r, d, function (err) {
-        t.error(err, 'replication ok')
-        syncfile.close(reopen)
+        t.error(err, 'replicate osm ok')
+        var d = blobReplicate(syncfile.media)
+        var r = blobReplicate(media)
+        replicate(d, r, function (err) {
+          t.error(err, 'replicate media ok')
+          syncfile.close(reopen)
+        })
       })
     }
 
@@ -135,8 +148,13 @@ test('replicate osm-p2p to new syncfile, close, then reopen & check', function (
       var d = syncfile.osm.log.replicate({live: false})
       var r = osm.log.replicate({live: false})
       replicate(r, d, function (err) {
-        t.error(err, 'second replication ok')
-        syncfile.close(check)
+        t.error(err, 'second osm replication ok')
+        var d = blobReplicate(syncfile.media)
+        var r = blobReplicate(media)
+        replicate(d, r, function (err) {
+          t.error(err, 'second media replicate ok')
+          syncfile.close(check)
+        })
       })
     }
 
@@ -150,7 +168,11 @@ test('replicate osm-p2p to new syncfile, close, then reopen & check', function (
           t.equals(Object.keys(heads).length, 1)
           t.deepEquals(heads[nodeVersion], node)
 
-          t.end()
+          collect(media.createReadStream('river.jpg'), function (err, data) {
+            t.error(err, 'read media ok')
+            t.equals(data.toString(), '<IMG DATA>')
+            t.end()
+          })
         })
       })
     }

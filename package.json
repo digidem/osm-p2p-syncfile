@@ -22,6 +22,7 @@
   },
   "devDependencies": {
     "abstract-blob-store": "^3.3.4",
+    "collect-stream": "^1.2.1",
     "osm-p2p-mem": "^1.0.0",
     "safe-fs-blob-store": "^1.0.2",
     "standard": "^12.0.0",
