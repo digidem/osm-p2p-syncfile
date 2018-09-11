@@ -13,12 +13,6 @@ Technically, the [ZIP archive format](https://en.wikipedia.org/wiki/ZIP_(file_fo
 
 To support constant time random-access reads, appends, and deletions, an index file is maintained at the end of the tar archive. See [indexed-tarball](https://github.com/noffle/indexed-tarball) for more details. This also supports archives that span multiple files.
 
-## STATUS
-
-> seems to work / not rigorously tested [yet]
-
-As in, unit tests and manual command line testing all seem to work OK, but I haven't integrated this into a real application yet.
-
 ## Example
 
 Let's create two osm-p2p databases and sync a node and photo between them using an intermediary syncfile. Normally this syncfile would be on a USB key, and each osm-p2p database would be on a separate device.
