@@ -6,12 +6,10 @@ var tar = require('tar-stream')
 var Syncfile = require('..')
 
 test('bad creation', function (t) {
-  var syncfile = new Syncfile(null, null)
-
-  syncfile.ready(function (err) {
-    t.ok(err instanceof Error)
-    t.end()
-  })
+  t.plan(1)
+  t.throws(function () {
+    var syncfile = new Syncfile(null, null)
+  }, 'must specify tmpdir to use', 'fails ok')
 })
 
 test('can initialize with new syncfile', function (t) {
