@@ -26,6 +26,8 @@ var State = {
 function Syncfile (filepath, tmpdir, opts) {
   if (!(this instanceof Syncfile)) return new Syncfile(filepath, tmpdir, opts)
 
+  if (!tmpdir || typeof tmpdir !== 'string') throw new Error('must specify tmpdir to use')
+
   this._state = State.INIT
   this._tmpdir = tmpdir
 
