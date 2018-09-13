@@ -12,7 +12,7 @@
   "dependencies": {
     "blob-store-replication-stream": "^1.1.1",
     "debug": "^3.1.0",
-    "indexed-tarball": "^2.1.0",
+    "indexed-tarball": "^3.1.0",
     "indexed-tarball-blob-store": "^1.1.0",
     "mkdirp": "^0.5.1",
     "once": "^1.4.0",

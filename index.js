@@ -59,6 +59,26 @@ Syncfile.prototype.ready = function (cb) {
   else this._ready(cb)
 }
 
+Syncfile.prototype.userdata = function (data, cb) {
+  if (!cb && typeof data === 'function') {
+    cb = data
+    data = null
+  }
+
+  if (this._state !== State.READY) {
+    return cb(new Error('syncfile is not ready'))
+  }
+
+  if (!data) {
+    this.tarball.userdata(function (err, data) {
+      if (err) return cb(err)
+      cb(null, data.syncfile || {})
+    })
+  } else {
+    this.tarball.userdata({syncfile: data}, cb)
+  }
+}
+
 Syncfile.prototype.close = function (cb) {
   cb = once(cb)
 

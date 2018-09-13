@@ -142,6 +142,12 @@ Reference to an [abstract-blob-store](https://github.com/maxogden/abstract-blob-
 
 With this you can do things like replication, using [blob-store-replication-stream](https://github.com/noffle/blob-store-replication-stream).
 
+### syncfile.userdata([data, ]cb)
+
+Mechanism to store an arbitrary JS object (encoded to JSON) inside the syncfile. This can be used for storing things like database versioning info, or an identifier that limits what datasets should sync with the syncfile.
+
+If `data` is given, the object is JSON encoded and stored in the tarball as well. If only `cb` is given, the current userdata will be retrieved.
+
 ### syncfile.close(cb)
 
 Closes the syncfile. This is critical for cleanup, such as writing the changes to the p2p database extracted to `tmpdir` back to the syncfile.
