@@ -24,9 +24,14 @@ test('can initialize with new syncfile', function (t) {
       t.equal(fs.readdirSync(dir).length, 2)
       t.notEqual(fs.readdirSync(dir).indexOf('sync.tar'), -1)
 
-      syncfile.close(function (err) {
+      syncfile.tarball.userdata(function (err, data) {
         t.error(err)
-        t.end()
+        t.deepEquals(data, {version: '1.0.0', syncfile: {}})
+
+        syncfile.close(function (err) {
+          t.error(err)
+          t.end()
+        })
       })
     })
   })

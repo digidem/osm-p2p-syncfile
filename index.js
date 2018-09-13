@@ -15,6 +15,9 @@ var readyify = require('./lib/readyify')
 
 module.exports = Syncfile
 
+// syncfile data format version
+var VERSION = '1.0.0'
+
 var State = {
   INIT:    1,
   READY:   2,
@@ -34,17 +37,32 @@ function Syncfile (filepath, tmpdir, opts) {
   var self = this
   this._ready = readyify(function (done) {
     try {
+      var exists = fs.existsSync(filepath)
       self.tarball = new IndexedTarball(filepath, opts)
-      self._extractOsm(function (err) {
+      if (!exists) {
+        self.tarball.userdata({version: VERSION, syncfile: {}}, extract)
+      } else {
+        extract()
+      }
+
+      function extract (err) {
         if (err) {
           self._state = State.ERROR
           self._error = err
           done(err)
-        } else {
-          self._state = State.READY
-          done()
+          return
         }
-      })
+        self._extractOsm(function (err) {
+          if (err) {
+            self._state = State.ERROR
+            self._error = err
+            done(err)
+          } else {
+            self._state = State.READY
+            done()
+          }
+        })
+      }
     } catch (e) {
       self._state = State.ERROR
       self._error = e
@@ -75,7 +93,7 @@ Syncfile.prototype.userdata = function (data, cb) {
       cb(null, data.syncfile || {})
     })
   } else {
-    this.tarball.userdata({syncfile: data}, cb)
+    this.tarball.userdata({version: VERSION, syncfile: data}, cb)
   }
 }
 
