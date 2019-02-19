@@ -11,6 +11,7 @@ var mkdirp = require('mkdirp')
 var pump = require('pump')
 var debug = require('debug')('osm-p2p-syncfile')
 var readyify = require('./lib/readyify')
+var tarSize = require('./lib/tar_size')
 
 module.exports = Syncfile
 
@@ -116,8 +117,11 @@ Syncfile.prototype.close = function (cb) {
 
   log.db.close(function (err) {
     if (err) return cb(err)
-    var ws = self.tarball.append('osm-p2p-log.tar', cleanup)
-    tar.pack(self._syncdir).pipe(ws)
+    tarSize(self._syncdir, function (err, size) {
+      if (err) return cb(err)
+      var ws = self.tarball.append('osm-p2p-log.tar', size, cleanup)
+      tar.pack(self._syncdir).pipe(ws)
+    })
   })
 
   // clean up tmp dir
