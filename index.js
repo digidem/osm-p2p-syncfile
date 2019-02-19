@@ -73,6 +73,9 @@ Syncfile.prototype.ready = function (cb) {
 }
 
 Syncfile.prototype.userdata = function (data, cb) {
+  if (this._state === State.CLOSED || this._state === State.CLOSING) {
+    return process.nextTick(cb, new Error('syncfile is closed'))
+  }
   if (!cb && typeof data === 'function') {
     cb = data
     data = null
