@@ -22,9 +22,8 @@ var TYPE = 'MAPEO-SYNCFILE'
 var State = {
   INIT:    1,
   READY:   2,
-  ERROR:   3,
-  CLOSING: 4,
-  CLOSED:  5
+  CLOSING: 3,
+  CLOSED:  4
 }
 
 function Syncfile (filepath, tmpdir, opts) {
@@ -60,7 +59,7 @@ function Syncfile (filepath, tmpdir, opts) {
       if (err) return cb(err)
       self.media = itar({ tarball: tarball })
       self.log = log
-      self.opened = true
+      self._state = State.READY
       cb()
     }
   }
@@ -79,7 +78,7 @@ Syncfile.prototype.userdata = function (data, cb) {
     data = null
   }
   var self = this
-  if (!this.opened) {
+  if (this._state === State.INIT) {
     return this.ready(function (err) {
       if (err) return cb(err)
       self.userdata(data, cb)
@@ -101,7 +100,7 @@ Syncfile.prototype.close = function (cb) {
     return process.nextTick(cb, new Error('syncfile is closed'))
   }
   var self = this
-  if (!this.opened) {
+  if (this._state === State.INIT) {
     return this.ready(function (err) {
       if (err) return cb(err)
       self.close(cb)
