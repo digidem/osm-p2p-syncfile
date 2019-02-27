@@ -27,20 +27,27 @@ test('try to replicate before ready', function (t) {
   })
 })
 
-test('replicate media + osm-p2p to syncfile', function (t) {
+test('replicate media + osm-p2p to syncfile with big data', function (t) {
   tmp.dir(function (err, dir, cleanup) {
     t.error(err)
 
     var osm = OsmMem()
     var media = blob()
     var syncfile
+    var nodeId
+    var nodeVersion
+    var node
 
     osm.create({ type: 'node', lat: 1, lon: 1, tags: { foo: 'bar' } }, function (err, id, theNode) {
       t.error(err, 'node creation ok')
+      nodeId = id
+      nodeVersion = theNode.key
+      node = theNode.value.v
       setup()
     })
 
     function setup () {
+      console.log('setting up syncfile')
       var filepath = path.join(dir, 'sync.tar')
       syncfile = Syncfile(filepath, dir)
       syncfile.ready(addMedia)
@@ -50,20 +57,23 @@ test('replicate media + osm-p2p to syncfile', function (t) {
       t.error(err, 'syncfile setup ok')
       var tasks = []
       for (var i = 0; i < 500; i++) {
-        tasks.push((next) => {
-          var writeStream = media.createWriteStream('river.jpg', next)
-          fs.createReadStream('hi-res.jpg').pipe(writeStream)
+        tasks.push(function (next) {
+          console.log('adding media', i)
+          var writeStream = media.createWriteStream('hi-res.jpg', next)
+          fs.createReadStream(path.join(__dirname, 'hi-res.jpg')).pipe(writeStream)
         })
       }
       parallel(tasks, function (err) {
+        if (err) throw err
+        console.log('done, syncing')
         sync()
       })
     }
 
     function sync (err) {
       t.error(err, 'add media ok')
-      var d = syncfile.osm.log.replicate({live: false})
-      var r = osm.log.replicate({live: false})
+      var d = syncfile.osm.log.replicate({ live: false })
+      var r = osm.log.replicate({ live: false })
       replicate(r, d, function (err) {
         t.error(err, 'replicate osm ok')
         var d = blobReplicate(syncfile.media)
@@ -71,10 +81,30 @@ test('replicate media + osm-p2p to syncfile', function (t) {
         replicate(d, r, check)
       })
     }
+
+    function check (err) {
+      t.error(err, 'replicate media ok')
+
+      syncfile.osm.ready(function () {
+        syncfile.osm.get(nodeId, function (err, heads) {
+          t.error(err, 'get ok')
+          t.equal(typeof heads, 'object', 'got heads')
+          t.equals(Object.keys(heads).length, 1)
+          t.deepEquals(heads[nodeVersion], node)
+
+          syncfile.media.exists('hi-res.jpg', function (err, exists) {
+            t.error(err, 'exists ok')
+            t.ok(exists, 'river.jpg exists')
+          })
+
+          syncfile.close(t.end.bind(t))
+        })
+      })
+    }
   })
 })
 
-test('replicate media + osm-p2p to syncfile with large data', function (t) {
+test('replicate media + osm-p2p to syncfile', function (t) {
   tmp.dir(function (err, dir, cleanup) {
     t.error(err)
 
