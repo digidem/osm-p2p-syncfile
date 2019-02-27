@@ -47,7 +47,6 @@ test('replicate media + osm-p2p to syncfile with big data', function (t) {
     })
 
     function setup () {
-      console.log('setting up syncfile')
       var filepath = path.join(dir, 'sync.tar')
       syncfile = Syncfile(filepath, dir)
       syncfile.ready(addMedia)
@@ -58,7 +57,6 @@ test('replicate media + osm-p2p to syncfile with big data', function (t) {
       var tasks = []
       for (var i = 0; i < 500; i++) {
         tasks.push(function (next) {
-          console.log('adding media', i)
           var writeStream = media.createWriteStream('hi-res.jpg', next)
           fs.createReadStream(path.join(__dirname, 'hi-res.jpg')).pipe(writeStream)
         })
