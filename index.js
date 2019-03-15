@@ -15,6 +15,8 @@ var readyify = require('./lib/readyify')
 
 module.exports = Syncfile
 
+var noop = function () {}
+
 // syncfile data format version
 var VERSION = '1.0.0'
 
@@ -209,7 +211,7 @@ Syncfile.prototype._extractOsm = function (cb) {
     pump(rs, ex, function (err) {
       debug('tar stream finish')
       if (err) cb(err)
-      else self.tarball.pop(cb)
+      else self.tarball.pop(noop)
     })
 
     ex.on('entry', function (header, stream, next) {
