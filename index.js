@@ -213,7 +213,7 @@ Syncfile.prototype._extractOsm = function (cb) {
     pump(rs, ex, function (err) {
       debug('tar stream finish')
       if (err) cb(err)
-      else self.tarball.pop(noop)
+      else self.tarball.pop(setupVars)
     })
 
     ex.on('entry', function (header, stream, next) {
@@ -226,11 +226,6 @@ Syncfile.prototype._extractOsm = function (cb) {
           next(err)
         })
       })
-    })
-
-    ex.on('finish', function () {
-      debug('tar finish')
-      setupVars()
     })
   }
 
