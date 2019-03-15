@@ -1,7 +1,9 @@
 var IndexedTarball = require('indexed-tarball')
 var itar = require('indexed-tarball-blob-store')
+var bsrs = require('blob-store-replication-stream')
 var tar = require('tar-stream')
-var Osm = require('osm-p2p')
+var multifeed = require('multifeed')
+var hypercore = require('hypercore')
 var path = require('path')
 var once = require('once')
 var fs = require('fs')
@@ -14,6 +16,8 @@ var debug = require('debug')('osm-p2p-syncfile')
 var readyify = require('./lib/readyify')
 
 module.exports = Syncfile
+
+var noop = function () {}
 
 // syncfile data format version
 var VERSION = '1.0.0'
@@ -114,16 +118,16 @@ Syncfile.prototype.close = function (cb) {
       return
     case State.CLOSING:
       process.nextTick(cb, new Error('syncfile is already closed'))
-      return t
+      return
   }
 
   this._state = State.CLOSING
-  var osm = this.osm
-  this.osm = undefined
+  var mfeed = this._mfeed
+  this._mfeed = undefined
   this.media = undefined
 
-  osm.ready(function () {
-    // re-pack syncfile p2p-db dir into tarball
+  mfeed.ready(function () {
+    // re-pack syncfile multifeed dir into tarball
     var tarPath = path.join(self._syncdir, 'osm-p2p-db.tar')
     var tarSize = 0
     var tcount = through(function (chunk, _, next) { tarSize += chunk.length; next(null, chunk) })
@@ -132,7 +136,7 @@ Syncfile.prototype.close = function (cb) {
     var pack = tar.pack()
 
     // 2. recursively walk files in self._syncdir (skip new tar file)
-    var rd = readdirp({root: path.join(self._syncdir, 'osm')})
+    var rd = readdirp({root: path.join(self._syncdir, 'multifeed')})
 
     // 3. write all to the tar file
     var twrite = through.obj(function (file, _, next) {
@@ -165,7 +169,7 @@ Syncfile.prototype.close = function (cb) {
 
   // clean up tmp dir
   function cleanup (err) {
-    osm.close(function (err2) {
+    mfeed.close(function (err2) {
       rimraf(self._syncdir, function (err3) {
         err = err || err2 || err3
         cb(err)
@@ -209,31 +213,36 @@ Syncfile.prototype._extractOsm = function (cb) {
     pump(rs, ex, function (err) {
       debug('tar stream finish')
       if (err) cb(err)
-      else self.tarball.pop(cb)
+      else self.tarball.pop(setupVars)
     })
 
     ex.on('entry', function (header, stream, next) {
       debug('extracting', header.name)
-      mkdirp(path.dirname(path.join(syncdir, 'osm', header.name)), function (err) {
+      mkdirp(path.dirname(path.join(syncdir, 'multifeed', header.name)), function (err) {
         if (err) return next(err)
-        var ws = fs.createWriteStream(path.join(syncdir, 'osm', header.name))
+        var ws = fs.createWriteStream(path.join(syncdir, 'multifeed', header.name))
         pump(stream, ws, function (err) {
           debug('extracted', header.name)
           next(err)
         })
       })
     })
-
-    ex.on('finish', function () {
-      debug('tar finish')
-      setupVars()
-    })
   }
 
   function setupVars (err) {
     if (err) return cb(err)
-    self.osm = Osm(path.join(syncdir, 'osm'))
-    self.media = itar({tarball: self.tarball})
-    self.osm.ready(cb)
+    self._mfeed = multifeed(hypercore, path.join(syncdir, 'multifeed'), {
+      valueEncoding: 'json'
+    })
+    self.replicateData = function (opts) {
+      return self._mfeed.replicate(opts)
+    }
+
+    self._media = itar({tarball: self.tarball})
+    self.replicateMedia = function (opts) {
+      return bsrs(self._media)
+    }
+
+    self._mfeed.ready(cb)
   }
 }
