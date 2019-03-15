@@ -10,14 +10,14 @@
     "test": "test"
   },
   "dependencies": {
-    "blob-store-replication-stream": "^1.1.1",
+    "blob-store-replication-stream": "^1.2.0",
     "debug": "^3.1.0",
+    "hypercore": "^6.25.0",
     "indexed-tarball": "^3.1.0",
     "indexed-tarball-blob-store": "^1.1.0",
     "mkdirp": "^0.5.1",
+    "multifeed": "^2.0.8",
     "once": "^1.4.0",
-    "osm-p2p": "^2.0.0",
-    "pump": "^3.0.0",
     "readdirp": "^2.1.0",
     "rimraf": "^2.6.2",
     "tar-stream": "^1.6.1",
@@ -26,7 +26,9 @@
   "devDependencies": {
     "abstract-blob-store": "^3.3.4",
     "collect-stream": "^1.2.1",
-    "osm-p2p-mem": "^1.0.0",
+    "end-of-stream": "^1.4.1",
+    "pump": "^3.0.0",
+    "random-access-memory": "^3.1.1",
     "safe-fs-blob-store": "^1.0.2",
     "standard": "^12.0.0",
     "tape": "^4.9.1",

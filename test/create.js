@@ -8,7 +8,7 @@ var Syncfile = require('..')
 test('bad creation', function (t) {
   t.plan(1)
   t.throws(function () {
-    var syncfile = new Syncfile(null, null)
+    new Syncfile(null, null)
   }, 'must specify tmpdir to use', 'fails ok')
 })
 
@@ -103,9 +103,12 @@ test('updates to inner osm-p2p-db.tar entry results in old entry being cleared',
     function setupAndClose (cb) {
       var syncfile = Syncfile(filepath, dir)
       syncfile.ready(function () {
-        syncfile.osm.create({ type: 'node' }, function (err) {
+        syncfile._mfeed.writer('default', function (err, w) {
           t.error(err)
-          syncfile.close(cb)
+          w.append({ type: 'node' }, function (err) {
+            t.error(err)
+            syncfile.close(cb)
+          })
         })
       })
     }
