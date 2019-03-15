@@ -18,6 +18,7 @@
     "mkdirp": "^0.5.1",
     "multifeed": "^2.0.8",
     "once": "^1.4.0",
+    "osm-p2p": "^3.0.1",
     "readdirp": "^2.1.0",
     "rimraf": "^2.6.2",
     "tar-stream": "^1.6.1",
