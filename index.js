@@ -20,7 +20,7 @@ module.exports = Syncfile
 var noop = function () {}
 
 // syncfile data format version
-var VERSION = '1.0.0'
+var VERSION = '2.0.0'
 
 var State = {
   INIT:    1,

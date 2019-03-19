@@ -26,7 +26,7 @@ test('can initialize with new syncfile', function (t) {
 
       syncfile.tarball.userdata(function (err, data) {
         t.error(err)
-        t.deepEquals(data, {version: '1.0.0', syncfile: {}})
+        t.deepEquals(data, {version: '2.0.0', syncfile: {}})
 
         syncfile.close(function (err) {
           t.error(err)
