@@ -106,19 +106,8 @@ Syncfile.prototype.close = function (cb) {
 
   var self = this
 
-  switch (this._state) {
-    case State.INIT:
-      process.nextTick(cb, new Error('syncfile is still opening'))
-      return
-    case State.ERROR:
-      process.nextTick(cb, this._error)
-      return
-    case State.CLOSED:
-      process.nextTick(cb, new Error('syncfile is already closed'))
-      return
-    case State.CLOSING:
-      process.nextTick(cb, new Error('syncfile is already closed'))
-      return
+  if (this._state !== State.READY) {
+    process.nextTick(cb, this._createReadyError())
   }
 
   this._state = State.CLOSING
@@ -178,6 +167,30 @@ Syncfile.prototype.close = function (cb) {
   }
 }
 
+Syncfile.prototype.replicateData = function (opts) {
+  if (this._state !== State.READY) throw this._createReadyError()
+  return this._mfeed.replicate(opts)
+}
+
+Syncfile.prototype.replicateMedia = function () {
+  if (this._state !== State.READY) throw this._createReadyError()
+  return bsrs(this._media)
+}
+
+Syncfile.prototype._createReadyError = function () {
+  switch (this._state) {
+    case State.INIT:
+      return new Error('Syncfile is not ready, call syncfile.ready() before trying to replicate')
+    case State.ERROR:
+      return new Error(this._error || 'Unknown error')
+    case State.CLOSING:
+    case State.CLOSED:
+      return new Error('Syncfile is closed.')
+    default:
+      return new Error('Syncfile is in unknown state')
+  }
+}
+
 Syncfile.prototype._extractOsm = function (cb) {
   cb = once(cb)
   var self = this
@@ -234,15 +247,7 @@ Syncfile.prototype._extractOsm = function (cb) {
     self._mfeed = multifeed(hypercore, path.join(syncdir, 'multifeed'), {
       valueEncoding: 'json'
     })
-    self.replicateData = function (opts) {
-      return self._mfeed.replicate(opts)
-    }
-
     self._media = itar({tarball: self.tarball})
-    self.replicateMedia = function (opts) {
-      return bsrs(self._media)
-    }
-
     self._mfeed.ready(cb)
   }
 }

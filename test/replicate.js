@@ -24,8 +24,8 @@ test('try to replicate before ready', function (t) {
     var filepath = path.join(dir, 'sync.tar')
     var syncfile = Syncfile(filepath, dir)
 
-    t.notOk(syncfile.replicateData, 'replicateData does not exist')
-    t.notOk(syncfile.replicateMedia, 'replicateMedia does not exist')
+    t.throws(syncfile.replicateData, 'replicateData() throws when not ready')
+    t.throws(syncfile.replicateMedia, 'replicateMedia() throws when not ready')
   })
 })
 
@@ -42,8 +42,8 @@ test('try to replicate after close', function (t) {
     })
 
     function onClose () {
-      t.notOk(syncfile.replicateData, 'replicateData does not exist')
-      t.notOk(syncfile.replicateMedia, 'replicateMedia does not exist')
+      t.throws(syncfile.replicateData, 'replicateData() throws when closed')
+      t.throws(syncfile.replicateMedia, 'replicateMedia() throws when closed')
     }
   })
 })
