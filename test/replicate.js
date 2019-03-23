@@ -24,8 +24,8 @@ test('try to replicate before ready', function (t) {
     var filepath = path.join(dir, 'sync.tar')
     var syncfile = Syncfile(filepath, dir)
 
-    t.notOk(syncfile.osm, 'no this.osm yet')
-    t.notOk(syncfile.media, 'no this.media yet')
+    t.notOk(syncfile.replicateData, 'replicateData does not exist')
+    t.notOk(syncfile.replicateMedia, 'replicateMedia does not exist')
   })
 })
 
