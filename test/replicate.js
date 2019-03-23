@@ -29,6 +29,25 @@ test('try to replicate before ready', function (t) {
   })
 })
 
+test('try to replicate after close', function (t) {
+  t.plan(3)
+
+  tmp.dir(function (err, dir, cleanup) {
+    t.error(err)
+
+    var filepath = path.join(dir, 'sync.tar')
+    var syncfile = Syncfile(filepath, dir)
+    syncfile.ready(function () {
+      syncfile.close(onClose)
+    })
+
+    function onClose () {
+      t.notOk(syncfile.replicateData, 'replicateData does not exist')
+      t.notOk(syncfile.replicateMedia, 'replicateMedia does not exist')
+    }
+  })
+})
+
 test('replicate media + osm-p2p to syncfile', function (t) {
   tmp.dir(function (err, dir, cleanup) {
     t.error(err)
