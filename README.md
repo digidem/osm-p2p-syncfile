@@ -150,33 +150,6 @@ Closes the syncfile. This is critical for cleanup, such as writing the changes t
 
 `cb` is called on completion.
 
-## CLI
-
-You can use this as a command line application as well:
-
-```
-npm install --global osm-p2p-syncfile
-```
-
-Usage:
-
-```
-USAGE: osm-p2p-syncfile COMMAND SYNCFILE [ARGS]
-
-Commands:
-  init [OSMDIR]     Create a new syncfile, optionally from an existing OSM
-                    directory.
-
-  add [FILE]        Add a file to the blob/media store.
-
-  list|ls           Print all blobs/media and all OSM data in the syncfile.
-
-  get [FILENAME]    Dump a blob/media file from the syncfile to stdout.
-
-  sync [SYNCFILE]   Sync this syncfile with another syncfile, exchanging all
-                    blobs/media and OSM data.
-```
-
 ## License
 
 MIT
