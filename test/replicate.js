@@ -199,7 +199,7 @@ test('replicate osm-p2p + media to new syncfile, close, then reopen & check', fu
   })
 })
 
-test.only('replicate media + osm-p2p to syncfile with big data', function (t) {
+test('replicate media + osm-p2p to syncfile with big data', function (t) {
   tmp.dir(function (err, dir, cleanup) {
     t.error(err)
 
