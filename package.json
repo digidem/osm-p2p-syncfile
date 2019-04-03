@@ -26,6 +26,7 @@
     "end-of-stream": "^1.4.1",
     "pump": "^3.0.0",
     "random-access-memory": "^3.1.1",
+    "run-parallel": "^1.1.9",
     "safe-fs-blob-store": "^1.0.3",
     "standard": "^12.0.0",
     "tape": "^4.9.1",
