@@ -1,6 +1,6 @@
 {
   "name": "osm-p2p-syncfile",
-  "version": "2.0.1",
+  "version": "3.0.0",
   "description": "Replicate OSM data and media using a sneakernet-style sync file.",
   "main": "index.js",
   "directories": {
