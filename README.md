@@ -53,7 +53,7 @@ function sync () {
   // 1. sync db1 to the syncfile
   replicate(
     db1.osm.replicate(),
-    syncfile.osm.log.replicate(),
+    syncfile.replicateData(),
     function (err) {
       if (err) throw err
 
@@ -62,7 +62,7 @@ function sync () {
         syncfile.ready(function () {
           // 2. sync the syncfile to db2
           replicate(
-            syncfile.osm.log.replicate(),
+            syncfile.replicateData(),
             db1.osm.replicate(),
             function (err) {
               if (err) throw err
