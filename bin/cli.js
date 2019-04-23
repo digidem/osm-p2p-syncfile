@@ -34,15 +34,18 @@ if (args[0] === 'init') {
   } else {
     var sync1 = new Syncfile(args[1], os.tmpdir())
     var osm = Osm(path.join(args[2], 'data'))
+    console.log('opening syncfile')
     sync1.ready(function () {
       osm.ready(function () {
+        console.log('replicating data...')
         replicate(sync1.replicateData({live:false}), osm.replicate({live:false}), function (err) {
           if (err) throw err
+          console.log('replicating media...')
           replicate(sync1.replicateMedia(), blobsync(store(path.join(args[2], 'media'))), function (err) {
             if (err) throw err
-          })
-          sync1.close(function () {
-            console.log('initialized', args[1], 'to', args[2])
+            sync1.close(function () {
+              console.log('initialized', args[2], 'to', args[1])
+            })
           })
         })
       })
