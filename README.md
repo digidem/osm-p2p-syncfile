@@ -20,65 +20,62 @@ Let's create two osm-p2p databases and sync a node and photo between them using 
 ```js
 var Osm = require('osm-p2p')
 var Blob = require('safe-fs-blob-store')
-var Syncfile = require('osm-p2p-syncfile')
+var BlobSync = require('blob-store-replication-stream')
+var Syncfile = require('..')
+var tmp = require('tmp')
+var os = require('os')
+var path = require('path')
 
 function createDb (n) {
-  var osm = Osm('/tmp/foo-' + n + '.p2p')
-  var media = Blob('/tmp/foo-' + n + '.media')
+  var dir = tmp.dirSync().name
+  var osm = Osm(dir)
+  var media = Blob(path.join(dir, 'media'))
   return { osm: osm, media: media }
 }
 
 var db1 = createDb(1)
 var db2 = createDb(2)
-var syncfile = new Syncfile('/tmp/sync1', '/tmp')
+var syncfilePath = path.join(tmp.dirSync().name, 'sync.tar')
+var syncfile = new Syncfile(syncfilePath, os.tmpdir())
 
 var id
 
-var node = { type: 'node', lat: 12.0, lon: 53.0, tags: { foo: 'bar' } }
+var node = { type: 'node', lat: 12.0, lon: 53.0, tags: { foo: 'bar' }, changeset: '123' }
 
-db1.osm.put(node, function (err, node) {
+db1.osm.create(node, function (err, node) {
   if (err) throw err
 
-  id = node.value.id
+  id = node.id
 
-  db1.ready(function () {
+  db1.osm.ready(function () {
     db1.media.createWriteStream('photo.png', function () {
-      syncfile.ready(sync)
+      syncfile.ready(onSync)
     })
       .end('media data!')
   })
 })
 
-function sync () {
+function onSync () {
   // 1. sync db1 to the syncfile
-  replicate(
-    db1.osm.replicate(),
-    syncfile.replicateData(),
-    function (err) {
-      if (err) throw err
-
-      syncfile.close(function () {
-        var syncfile = new Syncfile('/tmp/sync1', '/tmp')
-        syncfile.ready(function () {
-          // 2. sync the syncfile to db2
-          replicate(
-            syncfile.replicateData(),
-            db1.osm.replicate(),
-            function (err) {
-              if (err) throw err
-              check()
-            })
-        })
+  sync(db1, syncfile, function () {
+    syncfile.close(function () {
+      syncfile = new Syncfile(syncfilePath, os.tmpdir())
+      syncfile.ready(function () {
+        // 2. sync the syncfile to db2
+        sync(db2, syncfile, check)
       })
     })
+  })
 }
 
 function check () {
-  db2.osm.ready(function () {
-    db2.osm.get(id, function (err, elm) {
-      if (err) throw err
-      console.log(elm)
-      db2.media.createReadStream('photo.png').pipe(process.stdout)
+  syncfile.close(function () {
+    db2.osm.ready(function () {
+      db2.osm.get(id, function (err, elm) {
+        if (err) throw err
+        console.log(elm)
+        db2.media.createReadStream('photo.png').pipe(process.stdout)
+      })
     })
   })
 }
@@ -99,6 +96,17 @@ function replicate (stream1, stream2, cb) {
   }
 }
 
+function sync (db, file, cb) {
+  var pending = 2
+  replicate(db.osm.replicate(), syncfile.replicateData(), function (err) {
+    if (err) throw err
+    if (!--pending) cb()
+  })
+  replicate(BlobSync(db.media), syncfile.replicateMedia(), function (err) {
+    if (err) throw err
+    if (!--pending) cb()
+  })
+}
 ```
 
 outputs
