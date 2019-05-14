@@ -7,6 +7,10 @@ var IndexedTarball = require('indexed-tarball')
 var repair = require('indexed-tarball/lib/integrity').repair
 var collect = require('collect-stream')
 var tar = require('tar-stream')
+var Osm = require('osm-p2p')
+var os = require('os')
+var Blob = require('safe-fs-blob-store')
+var BlobSync = require('blob-store-replication-stream')
 
 if (process.argv.length < 4) {
   console.log('USAGE: node driver.js NUM-RUNS NODE-SCRIPT [SRC-TARBALL]')
@@ -51,16 +55,55 @@ function checkSyncfile (filename, cb) {
         if (Object.keys(meta.index).length !== 1002) {
           console.log('WARN: index has only', files.length, 'files out of 1002 expected')
         }
-        if (meta.userdata.version !== '2.0.0') {
+        if (!meta.userdata || meta.userdata.version !== '2.0.0') {
           console.log('WARN: indexed-tarball metadata version lost')
         }
-        if (meta.userdata['p2p-db'] !== 'kappa-osm') {
-          console.log('WARN: syncfile userdata "p2p-db" not set to "kappa-osm" (' + meta.userdata['p2p-db'] + ')')
+        if (!meta.userdata || meta.userdata['p2p-db'] !== 'kappa-osm') {
+          console.log('WARN: syncfile userdata "p2p-db" not set to "kappa-osm" (' + (meta && meta.usedata ? meta.userdata['p2p-db'] : '""') + ')')
         }
-        cb()
+
+        var syncfile = new Syncfile(filename, os.tmpdir())
+        syncfile.ready(function () {
+          var outdir = tmp.dirSync().name
+          var db = createDb(outdir)
+          db.osm.ready(function () {
+            sync(db, syncfile, function (err) {
+              if (err) return cb(err)
+              db.osm.query([-Infinity, -Infinity, Infinity, Infinity], function (err, res) {
+                if (err) return cb(err)
+                if (res.length !== 1000) {
+                  console.log('ERR: data loss: only', res.length, 'out of 1000 map records queried')
+                }
+                db.media.list(function (err, names) {
+                  if (err) return cb(err)
+                  if (names.length !== 100) {
+                    console.log('wrong # media names', names.length)
+                  }
+                  var pending = 1
+                  for (var i=0; i < names.length; i++) {
+                    if (!names[i].endsWith('.png')) {
+                      console.log('unknown media file:', names[i])
+                      continue
+                    }
+                    ;(function (name) {
+                      pending++
+                      collect(db.media.createReadStream(names[i]), function (err, data) {
+                        if (err) console.log('err streaming', err)
+                        if (data.length !== 65536) {
+                          console.log('media', name, 'is wrong length', data.length)
+                        }
+                        if(!--pending) cb()
+                      })
+                    })(names[i])
+                  }
+                  if (!--pending) cb()
+                })
+              })
+            })
+          })
+        })
       })
     })
-    // var syncfile = new Syncfile(filename, os.tmpdir())
   })
 }
 
@@ -99,6 +142,7 @@ p.on('close', function (code, signal) {
   console.log('first run ended after', duration, 'ms (code=' + code + ', signal=' + signal + ')')
 
   runTimes(runs, function (next) {
+    console.log('------------------------------------------------')
     runWithTimeout(duration, function (err, filename) {
       if (err) throw err
       checkSyncfile(filename, function (err) {
@@ -110,7 +154,9 @@ p.on('close', function (code, signal) {
 })
 
 function runTimes (times, fn) {
+  console.log('start', times)
   ;(function next (n) {
+    console.log('n', n)
     if (n <= 0) return
     fn(function () {
       next(n - 1)
@@ -126,7 +172,7 @@ function getIndexedTarballMetadata (tarname, cb) {
       collect(stream, function (err, data) {
         try {
           var meta = JSON.parse(data.toString())
-          cb(null, meta)
+          process.nextTick(cb, null, meta)
         } catch (err) {
           return cb(err)
         }
@@ -137,4 +183,38 @@ function getIndexedTarballMetadata (tarname, cb) {
   })
 
   fs.createReadStream(tarname).pipe(extract)
+}
+
+function createDb (dir) {
+  var osm = Osm(dir)
+  var media = Blob(path.join(dir, 'media'))
+  return { osm: osm, media: media }
+}
+
+function replicate (stream1, stream2, cb) {
+  stream1.on('end', done)
+  stream1.on('error', done)
+  stream2.on('end', done)
+  stream2.on('error', done)
+
+  stream1.pipe(stream2).pipe(stream1)
+
+  var pending = 2
+  var error
+  function done (err) {
+    error = err || error
+    if (!--pending) cb(err)
+  }
+}
+
+function sync (db, file, cb) {
+  var pending = 2
+  replicate(db.osm.replicate(), file.replicateData(), function (err) {
+    if (err) throw err
+    if (!--pending) cb()
+  })
+  replicate(BlobSync(db.media), file.replicateMedia(), function (err) {
+    if (err) throw err
+    if (!--pending) cb()
+  })
 }

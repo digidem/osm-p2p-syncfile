@@ -29,11 +29,13 @@ console.log('indexing')
 db.osm.ready(function () {
   console.log('done')
   console.log('syncing')
-  sync(db, syncfile, function () {
-    console.log('done')
-    console.log('writing syncfile')
-    syncfile.close(function () {
+  syncfile.ready(function () {
+    sync(db, syncfile, function () {
       console.log('done')
+      console.log('writing syncfile')
+      syncfile.close(function () {
+        console.log('done')
+      })
     })
   })
 })

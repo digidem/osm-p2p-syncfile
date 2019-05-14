@@ -61,7 +61,7 @@ function writeRandomMedia (numPhotos, cb) {
   })(numPhotos)
 }
 
-writeRandomData(1000, function (err) {
+writeRandomData(10000, function (err) {
   if (err) throw err
   writeRandomMedia(1000, function (err) {
     if (err) throw err
