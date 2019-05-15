@@ -14,6 +14,7 @@ var readdirp = require('readdirp')
 var pump = require('pump')
 var debug = require('debug')('osm-p2p-syncfile')
 var readyify = require('./lib/readyify')
+var repair = require('indexed-tarball/lib/integrity').repair
 
 module.exports = Syncfile
 
@@ -38,41 +39,59 @@ function Syncfile (filepath, tmpdir, opts) {
   this._state = State.INIT
   this._tmpdir = tmpdir
 
+  opts = opts || {}
+
   var self = this
   this._ready = readyify(function (done) {
-    try {
-      var exists = fs.existsSync(filepath)
-      self.tarball = new IndexedTarball(filepath, opts)
-      if (!exists) {
-        self.tarball.userdata({version: VERSION, syncfile: {}}, extract)
-      } else {
-        extract()
-      }
-
-      function extract (err) {
+    if (opts.autorepair) {
+      repair(filepath, function (err, res) {
         if (err) {
           self._state = State.ERROR
           self._error = err
-          done(err)
-          return
+          return done(err)
         }
-        self._extractOsm(function (err) {
-          if (err) {
-            self._state = State.ERROR
-            self._error = err
-            done(err)
-          } else {
-            self._state = State.READY
-            done()
-          }
-        })
-      }
-    } catch (e) {
-      self._state = State.ERROR
-      self._error = e
-      done(e)
+        self._open(filepath, tmpdir, opts, done)
+      })
+    } else {
+      self._open(filepath, tmpdir, opts, done)
     }
   })
+}
+
+Syncfile.prototype._open = function (filepath, tmpdir, opts, cb) {
+  var self = this
+  try {
+    var exists = fs.existsSync(filepath)
+    self.tarball = new IndexedTarball(filepath, opts)
+    if (!exists) {
+      self.tarball.userdata({version: VERSION, syncfile: {}}, extract)
+    } else {
+      extract()
+    }
+
+    function extract (err) {
+      if (err) {
+        self._state = State.ERROR
+        self._error = err
+        cb(err)
+        return
+      }
+      self._extractOsm(function (err) {
+        if (err) {
+          self._state = State.ERROR
+          self._error = err
+          cb(err)
+        } else {
+          self._state = State.READY
+          cb()
+        }
+      })
+    }
+  } catch (e) {
+    self._state = State.ERROR
+    self._error = e
+    cb(e)
+  }
 }
 
 Syncfile.prototype.ready = function (cb) {
