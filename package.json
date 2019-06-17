@@ -21,6 +21,7 @@
     "osm-p2p": "^4.0.0",
     "readdirp": "^2.1.0",
     "rimraf": "^2.6.2",
+    "safe-fs-blob-store": "^1.0.3",
     "tar-stream": "^1.6.1",
     "through2": "^2.0.3"
   },
@@ -33,7 +34,6 @@
     "random-access-memory": "^3.1.1",
     "randombytes": "^2.1.0",
     "run-parallel": "^1.1.9",
-    "safe-fs-blob-store": "^1.0.3",
     "standard": "^12.0.0",
     "tape": "^4.9.1",
     "tmp": "^0.1.0"
