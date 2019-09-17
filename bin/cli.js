@@ -10,7 +10,7 @@ var Osm = require('osm-p2p')
 var spawn = require('child_process').spawnSync
 
 function printUsageAndDie () {
-  console.log('USAGE: osm-p2p-syncfile init|sync|add|list|get SYNCFILE [ARGS]')
+  process.stdout.write(fs.readFileSync(path.join(__dirname, 'usage.txt')))
   process.exit(1)
 }
 
