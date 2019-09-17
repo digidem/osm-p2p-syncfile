@@ -10,7 +10,7 @@ var blob = require('abstract-blob-store')
 var blobReplicate = require('blob-store-replication-stream')
 var collect = require('collect-stream')
 var fs = require('fs')
-var parallel = require('run-parallel')
+var parallel = require('run-parallel-limit')
 var fsblob = require('safe-fs-blob-store')
 var Syncfile = require('..')
 
@@ -235,7 +235,7 @@ test('replicate media + osm-p2p to syncfile with big data', function (t) {
           fs.createReadStream(path.join(__dirname, 'hi-res.jpg')).pipe(writeStream)
         })
       }
-      parallel(tasks, function (err) {
+      parallel(tasks, 5, function (err) {
         if (err) throw err
         console.log('done, syncing')
         sync()
