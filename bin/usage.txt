@@ -2,7 +2,7 @@ USAGE: osm-p2p-syncfile COMMAND SYNCFILE [ARGS]
 
 Commands:
   init [OSMDIR]     Create a new syncfile, optionally from an existing OSM
-                    directory.
+                    directory. Expects a dir with 'data/' and 'media/' subdirs.
 
   add [FILE]        Add a file to the blob/media store.
 
