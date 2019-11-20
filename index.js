@@ -162,7 +162,7 @@ Syncfile.prototype.close = function (cb) {
     pump(rd, twrite, function (err) {
       debug('finalizing')
       if (!err) pack.finalize()
-      else cb(err)
+      else cleanup(err)
     })
     pump(pack, tcount, fs.createWriteStream(tarPath), function (err) {
       if (err) return cleanup(err)
