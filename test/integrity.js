@@ -2,7 +2,6 @@ var test = require('tape')
 var path = require('path')
 var tmp = require('tmp')
 var multifeed = require('multifeed')
-var hypercore = require('hypercore')
 var eos = require('end-of-stream')
 var pump = require('pump')
 var ram = require('random-access-memory')
@@ -18,7 +17,7 @@ test('create a good syncfile, truncate it, then repair', function (t) {
     t.error(err)
 
     var filepath = path.join(dir, 'sync.tar')
-    var mfeed = multifeed(hypercore, ram, { valueEncoding: 'json' })
+    var mfeed = multifeed(ram, { valueEncoding: 'json' })
     var media = blob()
     var syncfile
     var node = { type: 'node', lat: 1, lon: 2 }

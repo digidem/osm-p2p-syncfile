@@ -3,7 +3,6 @@ var itar = require('indexed-tarball-blob-store')
 var bsrs = require('blob-store-replication-stream')
 var tar = require('tar-stream')
 var multifeed = require('multifeed')
-var hypercore = require('hypercore')
 var path = require('path')
 var once = require('once')
 var fs = require('fs')
@@ -186,9 +185,9 @@ Syncfile.prototype.close = function (cb) {
   }
 }
 
-Syncfile.prototype.replicateData = function (opts) {
+Syncfile.prototype.replicateData = function (isInitiator, opts) {
   if (this._state !== State.READY) throw this._createReadyError()
-  return this._mfeed.replicate(opts)
+  return this._mfeed.replicate(isInitiator, opts)
 }
 
 Syncfile.prototype.replicateMedia = function () {
@@ -218,8 +217,8 @@ Syncfile.prototype._extractOsm = function (cb) {
   var syncdir = path.join(this._tmpdir, 'osm-p2p-syncfile-' + Math.random().toString().substring(2))
   this._syncdir = syncdir
 
-  // 2. create tmp sync dir
-  mkdirp(syncdir, function (err) {
+  // 2. create tmp sync dir + multifeed dir
+  mkdirp(path.join(syncdir, 'multifeed'), function (err) {
     if (err) return cb(err)
 
     // 3. check if p2p db exists in archive
@@ -263,7 +262,7 @@ Syncfile.prototype._extractOsm = function (cb) {
 
   function setupVars (err) {
     if (err) return cb(err)
-    self._mfeed = multifeed(hypercore, path.join(syncdir, 'multifeed'), {
+    self._mfeed = multifeed(path.join(syncdir, 'multifeed'), {
       valueEncoding: 'json'
     })
     self._media = itar({tarball: self.tarball})

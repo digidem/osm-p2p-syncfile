@@ -2,7 +2,6 @@ var test = require('tape')
 var path = require('path')
 var tmp = require('tmp')
 var multifeed = require('multifeed')
-var hypercore = require('hypercore')
 var eos = require('end-of-stream')
 var pump = require('pump')
 var ram = require('random-access-memory')
@@ -55,7 +54,7 @@ test('replicate media + osm-p2p to syncfile', function (t) {
   tmp.dir(function (err, dir, cleanup) {
     t.error(err)
 
-    var mfeed = multifeed(hypercore, ram, { valueEncoding: 'json' })
+    var mfeed = multifeed(ram, { valueEncoding: 'json' })
     var media = blob()
     var syncfile
     var node = { type: 'node', lat: 1, lon: 2 }
@@ -82,8 +81,8 @@ test('replicate media + osm-p2p to syncfile', function (t) {
 
     function sync (err) {
       t.error(err, 'add media ok')
-      var d = syncfile.replicateData({live: false})
-      var r = mfeed.replicate({live: false})
+      var d = syncfile.replicateData(true, {live: false})
+      var r = mfeed.replicate(false, {live: false})
       replicate(r, d, function (err) {
         t.error(err, 'replicate osm ok')
         var d = syncfile.replicateMedia()
@@ -115,7 +114,7 @@ test('replicate osm-p2p + media to new syncfile, close, then reopen & check', fu
     t.error(err)
 
     var filepath = path.join(dir, 'sync.tar')
-    var mfeed = multifeed(hypercore, ram, { valueEncoding: 'json' })
+    var mfeed = multifeed(ram, { valueEncoding: 'json' })
     var media = blob()
     var syncfile
     var node = { type: 'node', lat: 1, lon: 2 }
@@ -141,8 +140,8 @@ test('replicate osm-p2p + media to new syncfile, close, then reopen & check', fu
 
     function sync (err) {
       t.error(err, 'add media ok')
-      var d = syncfile.replicateData({live: false})
-      var r = mfeed.replicate({live: false})
+      var d = syncfile.replicateData(true, {live: false})
+      var r = mfeed.replicate(false, {live: false})
       replicate(r, d, function (err) {
         t.error(err, 'replicate osm ok')
         var d = syncfile.replicateMedia()
@@ -163,10 +162,10 @@ test('replicate osm-p2p + media to new syncfile, close, then reopen & check', fu
     function sync2 (err) {
       t.error(err, 'reopen ok')
 
-      mfeed = multifeed(hypercore, ram, { valueEncoding: 'json' })
+      mfeed = multifeed(ram, { valueEncoding: 'json' })
       mfeed.ready(function () {
-        var d = syncfile.replicateData({live: false})
-        var r = mfeed.replicate({live: false})
+        var d = syncfile.replicateData(false, {live: false})
+        var r = mfeed.replicate(true, {live: false})
         replicate(r, d, function (err) {
           // HACK(noffle): ignore for now; bug in multifeed
           if (err && err.message === 'premature close') err = undefined
@@ -204,7 +203,7 @@ test('replicate media + osm-p2p to syncfile with big data', function (t) {
     t.error(err)
 
     var filepath = path.join(dir, 'sync.tar')
-    var mfeed = multifeed(hypercore, ram, { valueEncoding: 'json' })
+    var mfeed = multifeed(ram, { valueEncoding: 'json' })
     var media = blob()
     var syncfile
     var nodeId
@@ -229,23 +228,24 @@ test('replicate media + osm-p2p to syncfile with big data', function (t) {
       t.error(err, 'syncfile setup ok')
       var tasks = []
       var n = 0
-      for (var i = 0; i < 500; i++) {
-        tasks.push(function (next) {
-          var writeStream = media.createWriteStream(`hi-res-${n++}.jpg`, next)
-          fs.createReadStream(path.join(__dirname, 'hi-res.jpg')).pipe(writeStream)
-        })
+      for (var i = 0; i < 100; i++) {
+        ;(function (n) {
+          tasks.push(function (next) {
+            var writeStream = media.createWriteStream(`hi-res-${n++}.jpg`)
+            pump(fs.createReadStream(path.join(__dirname, 'hi-res.jpg')), writeStream, next)
+          })
+        })(i)
       }
-      parallel(tasks, 5, function (err) {
+      parallel(tasks, 1, function (err) {
         if (err) throw err
-        console.log('done, syncing')
         sync()
       })
     }
 
     function sync (err) {
       t.error(err, 'add media ok')
-      var d = syncfile.replicateData({live: false})
-      var r = mfeed.replicate({live: false})
+      var d = syncfile.replicateData(true, {live: false})
+      var r = mfeed.replicate(false, {live: false})
       replicate(r, d, function (err) {
         t.error(err, 'replicate osm ok')
         var d = syncfile.replicateMedia()
@@ -266,10 +266,10 @@ test('replicate media + osm-p2p to syncfile with big data', function (t) {
     function sync2 (err) {
       t.error(err, 'reopen ok')
 
-      mfeed = multifeed(hypercore, ram, { valueEncoding: 'json' })
+      mfeed = multifeed(ram, { valueEncoding: 'json' })
       mfeed.ready(function () {
-        var d = syncfile.replicateData({live: false})
-        var r = mfeed.replicate({live: false})
+        var d = syncfile.replicateData(true, {live: false})
+        var r = mfeed.replicate(false, {live: false})
         replicate(r, d, function (err) {
           // HACK(noffle): ignore for now; bug in multifeed
           if (err && err.message === 'premature close') err = undefined

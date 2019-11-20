@@ -98,7 +98,7 @@ function replicate (stream1, stream2, cb) {
 
 function sync (db, file, cb) {
   var pending = 2
-  replicate(db.osm.replicate(), syncfile.replicateData(), function (err) {
+  replicate(db.osm.replicate(false), syncfile.replicateData(true), function (err) {
     if (err) throw err
     if (!--pending) cb()
   })
@@ -138,9 +138,11 @@ Call `cb` once the syncfile is ready to perform replication. If the syncfile is 
 
 If setting up the syncfile was not successful, `cb` will be called as `cb(err)`.
 
-### var stream = syncfile.replicateData(opts)
+### var stream = syncfile.replicateData(isInitiator, opts)
 
 Returns a replication duplex stream that you can hook up to another kappa-osm (or multifeed) database replication stream to sync the two together.
+
+Ensure that `isInitiator` to `true` to one side, and `false` on the other. This is necessary for setting up the encryption mechanism.
 
 ### var stream = syncfile.replicateMedia(opts)
 

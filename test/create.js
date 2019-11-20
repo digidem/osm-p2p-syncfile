@@ -20,16 +20,16 @@ test('can initialize with new syncfile', function (t) {
     var syncfile = Syncfile(filepath, dir)
 
     syncfile.ready(function () {
-      t.ok(fs.existsSync(filepath))
-      t.equal(fs.readdirSync(dir).length, 2)
-      t.notEqual(fs.readdirSync(dir).indexOf('sync.tar'), -1)
+      t.ok(fs.existsSync(filepath), 'syncfile dir exists')
+      t.equal(fs.readdirSync(dir).length, 2, 'two files in syncfile dir')
+      t.notEqual(fs.readdirSync(dir).indexOf('sync.tar'), -1, 'sync.tar is present')
 
       syncfile.tarball.userdata(function (err, data) {
-        t.error(err)
-        t.deepEquals(data, {version: '2.0.0', syncfile: {}})
+        t.error(err, 'usedata written ok')
+        t.deepEquals(data, {version: '2.0.0', syncfile: {}}, 'userdata as expected')
 
         syncfile.close(function (err) {
-          t.error(err)
+          t.error(err, 'syncfile closed ok')
           t.end()
         })
       })
