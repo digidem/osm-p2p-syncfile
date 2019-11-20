@@ -1,3 +1,6 @@
 test/
 chaos/
 *.sh
+todo.json
+integration.md
+.travis.yml
