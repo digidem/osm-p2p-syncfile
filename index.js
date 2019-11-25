@@ -40,6 +40,7 @@ function Syncfile (filepath, tmpdir, opts) {
   this._tmpdir = tmpdir
 
   opts = opts || {}
+  this._encryptionKey = opts.encryptionKey
 
   var self = this
   this._ready = readyify(function (done) {
@@ -264,7 +265,8 @@ Syncfile.prototype._extractOsm = function (cb) {
   function setupVars (err) {
     if (err) return cb(err)
     self._mfeed = multifeed(hypercore, path.join(syncdir, 'multifeed'), {
-      valueEncoding: 'json'
+      valueEncoding: 'json',
+      encryptionKey: self._encryptionKey
     })
     self._media = itar({tarball: self.tarball})
     self._mfeed.ready(cb)

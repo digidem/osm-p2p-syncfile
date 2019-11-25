@@ -132,6 +132,8 @@ Use whatever extension you'd like; underneath it's a [TAR][tar] archive. The fil
 
 - `multifile`: Allow the syncfile to span multiple archives once a 4 gigabyte limit is reached. The below API works exactly the same, but will be multifile-aware.
 
+- `encryptionKey`: If you are syncing with a multifeed instance that is using a custom encryptionKey, then you also need to pass this as an opt to Syncfile
+
 ### syncfile.ready(cb)
 
 Call `cb` once the syncfile is ready to perform replication. If the syncfile is already ready, `cb` is called immediately.
