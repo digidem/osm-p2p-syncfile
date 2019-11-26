@@ -128,6 +128,20 @@ if (args[0] === 'init') {
       sync1.close(function () {})
     })
   })
+} else if (args[0] === 'repair') {
+  if (args.length !== 2) {
+    console.log('USAGE: osm-p2p-syncfile repair SYNCFILE')
+    process.exit(1)
+  }
+
+  var sync1 = new Syncfile(args[1], os.tmpdir(), { autorepair: true })
+  sync1.ready(function (err) {
+    if (err) throw err
+    sync1.close(function (err) {
+      if (err) throw err
+      console.log('repaired', args[1])
+    })
+  })
 } else {
   printUsageAndDie()
 }

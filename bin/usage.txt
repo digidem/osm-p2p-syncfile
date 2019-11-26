@@ -12,3 +12,5 @@ Commands:
 
   sync [SYNCFILE]   Sync this syncfile with another syncfile, exchanging all
                     blobs/media and OSM data.
+
+  repair            Attempt to repair this syncfile.
