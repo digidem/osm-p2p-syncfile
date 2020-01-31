@@ -148,9 +148,13 @@ Syncfile.prototype.close = function (cb) {
     // 3. write all to the tar file
     var twrite = through.obj(function (file, _, next) {
       if (file.path === 'osm-p2p-db.tar') return next()
-      debug('file', file.fullPath, file.stat.size)
-      var entry = pack.entry({ name: file.path, size: file.stat.size }, function (err) {
-        debug('wrote', file.path)
+      debug('writing file', file.path, file.stat.size)
+
+      // force use of unix-style path separators
+      var filepath = file.path.replace(/\\/g, '/')
+
+      var entry = pack.entry({ name: filepath, size: file.stat.size }, function (err) {
+        debug('wrote', filepath)
         if (err) return next(err)
         else next()
       })
