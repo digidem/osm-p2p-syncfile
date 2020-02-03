@@ -9,12 +9,55 @@ var blob = require('abstract-blob-store')
 var blobReplicate = require('blob-store-replication-stream')
 var fs = require('fs')
 var Syncfile = require('..')
+var readdirp = require('readdirp')
 
 blob.prototype._list = function (cb) {
   return process.nextTick(cb, null, Object.keys(this.data))
 }
 
-// TODO: ensure we handle existing tarballs with windows separators OK too
+test('REGRESSION: syncfiles containing windows file separators can be read', function (t) {
+  t.plan(8)
+
+  var mfeed
+
+  tmp.dir(function (err, dir, cleanup) {
+    t.error(err)
+
+    tmp.dir(function (err, mfdir, cleanup) {
+      t.error(err)
+
+      var syncfileSrc = path.join(__dirname, 'windows_regression.tar')
+      var syncfileDst = path.join(dir, 'windows_regression.tar')
+      fs.copyFile(syncfileSrc, syncfileDst, function (err) {
+        t.error(err, 'tarball copy ok')
+
+        var syncfile = Syncfile(syncfileDst, dir)
+        syncfile.ready(setup)
+
+        function setup () {
+          mfeed = multifeed(mfdir, { valueEncoding: 'json' })
+          mfeed.ready(function () {
+            var d = syncfile.replicateData(true, {live: false})
+            var r = mfeed.replicate(false, {live: false})
+            replicate(r, d, function (err) {
+              t.error(err, 'replicate osm ok')
+              syncfile.close(check)
+            })
+          })
+        }
+
+        function check () {
+          t.same(mfeed.feeds().length, 1, '1 feed synced')
+          mfeed.feeds()[0].get(0, function (err, data) {
+            t.error(err)
+            t.same(data, { type: 'node', lat: 1, lon: 2 }, 'data as expected')
+            cleanup(() => t.ok(true, 'cleanup ok'))
+          })
+        }
+      })
+    })
+  })
+})
 
 test('REGRESSION: windows file separators are written to tarball', function (t) {
   t.plan(15)
