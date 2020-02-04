@@ -12,6 +12,7 @@ var rimraf = require('rimraf')
 var mkdirp = require('mkdirp')
 var readdirp = require('readdirp')
 var pump = require('pump')
+var os = require('os')
 var debug = require('debug')('osm-p2p-syncfile')
 var readyify = require('./lib/readyify')
 var repair = require('indexed-tarball/lib/integrity').repair
@@ -150,9 +151,13 @@ Syncfile.prototype.close = function (cb) {
     // 3. write all to the tar file
     var twrite = through.obj(function (file, _, next) {
       if (file.path === 'osm-p2p-db.tar') return next()
-      debug('file', file.fullPath, file.stat.size)
-      var entry = pack.entry({ name: file.path, size: file.stat.size }, function (err) {
-        debug('wrote', file.path)
+      debug('writing file', file.path, file.stat.size)
+
+      // force use of unix-style path separators
+      var filepath = file.path.replace(/\\/g, '/')
+
+      var entry = pack.entry({ name: filepath, size: file.stat.size }, function (err) {
+        debug('wrote', filepath)
         if (err) return next(err)
         else next()
       })
@@ -250,12 +255,21 @@ Syncfile.prototype._extractOsm = function (cb) {
     })
 
     ex.on('entry', function (header, stream, next) {
-      debug('extracting', header.name)
-      mkdirp(path.dirname(path.join(syncdir, 'multifeed', header.name)), function (err) {
+      var filepath = header.name
+
+      // ensure the right path separator is used
+      if (os.platform() !== 'win32') {
+        filepath = header.name.replace(/\\/g, '/')
+      } else {
+        filepath = header.name.replace(/\//g, '\\')
+      }
+
+      debug('extracting', filepath)
+      mkdirp(path.dirname(path.join(syncdir, 'multifeed', filepath)), function (err) {
         if (err) return next(err)
-        var ws = fs.createWriteStream(path.join(syncdir, 'multifeed', header.name))
+        var ws = fs.createWriteStream(path.join(syncdir, 'multifeed', filepath))
         pump(stream, ws, function (err) {
-          debug('extracted', header.name)
+          debug('extracted', filepath)
           next(err)
         })
       })
