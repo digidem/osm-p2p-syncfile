@@ -9,7 +9,6 @@ var blob = require('abstract-blob-store')
 var blobReplicate = require('blob-store-replication-stream')
 var fs = require('fs')
 var Syncfile = require('..')
-var readdirp = require('readdirp')
 
 blob.prototype._list = function (cb) {
   return process.nextTick(cb, null, Object.keys(this.data))

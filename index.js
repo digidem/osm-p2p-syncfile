@@ -18,17 +18,15 @@ var repair = require('indexed-tarball/lib/integrity').repair
 
 module.exports = Syncfile
 
-var noop = function () {}
-
 // syncfile data format version
 var VERSION = '2.0.0'
 
 var State = {
-  INIT:    1,
-  READY:   2,
-  ERROR:   3,
+  INIT: 1,
+  READY: 2,
+  ERROR: 3,
   CLOSING: 4,
-  CLOSED:  5
+  CLOSED: 5
 }
 
 function Syncfile (filepath, tmpdir, opts) {
@@ -68,29 +66,29 @@ Syncfile.prototype._open = function (filepath, tmpdir, opts, cb) {
     } else {
       extract()
     }
-
-    function extract (err) {
-      if (err) {
-        self._state = State.ERROR
-        self._error = err
-        cb(err)
-        return
-      }
-      self._extractOsm(function (err) {
-        if (err) {
-          self._state = State.ERROR
-          self._error = err
-          cb(err)
-        } else {
-          self._state = State.READY
-          cb()
-        }
-      })
-    }
   } catch (e) {
     self._state = State.ERROR
     self._error = e
     cb(e)
+  }
+
+  function extract (err) {
+    if (err) {
+      self._state = State.ERROR
+      self._error = err
+      cb(err)
+      return
+    }
+    self._extractOsm(function (err) {
+      if (err) {
+        self._state = State.ERROR
+        self._error = err
+        cb(err)
+      } else {
+        self._state = State.READY
+        cb()
+      }
+    })
   }
 }
 
