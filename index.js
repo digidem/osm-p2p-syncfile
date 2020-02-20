@@ -153,11 +153,13 @@ Syncfile.prototype.close = function (cb) {
       var filepath = file.path.replace(/\\/g, '/')
 
       var entry = pack.entry({ name: filepath, size: file.stat.size }, function (err) {
-        debug('wrote', filepath)
         if (err) return next(err)
-        else next()
+        debug('wrote', filepath)
+        next()
       })
-      pump(fs.createReadStream(file.fullPath), entry)
+      pump(fs.createReadStream(file.fullPath), entry, function (err) {
+        if (err) next(err)
+      })
     })
 
     // 4. pipe them together
@@ -166,14 +168,16 @@ Syncfile.prototype.close = function (cb) {
       if (!err) pack.finalize()
       else cleanup(err)
     })
+
     pump(pack, tcount, fs.createWriteStream(tarPath), function (err) {
       if (err) return cleanup(err)
 
       debug('done', tarPath, tarSize)
 
       // 5. write tar file to self.tarball.append()
-      fs.createReadStream(tarPath)
-        .pipe(self.tarball.append('osm-p2p-db.tar', cleanup))
+      pump(fs.createReadStream(tarPath),
+           self.tarball.append('osm-p2p-db.tar', cleanup),
+           cleanup)
     })
   })
 
@@ -181,8 +185,8 @@ Syncfile.prototype.close = function (cb) {
   function cleanup (err) {
     mfeed.close(function (err2) {
       rimraf(self._syncdir, function (err3) {
-        err = err || err2 || err3
-        cb(err)
+        var error = err || err2 || err3
+        cb(error)
       })
     })
   }
