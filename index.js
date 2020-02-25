@@ -180,8 +180,21 @@ Syncfile.prototype.close = function (cb) {
 
       // 5. write tar file to self.tarball.append()
       pump(fs.createReadStream(tarPath),
-           self.tarball.append('osm-p2p-db.tar', cleanup),
-           cleanup)
+           self.tarball.append('osm-p2p-db.tar', fin),
+           fin)
+
+      // Report an error + do cleanup exactly once
+      var pending = 2
+      var error
+      function fin (err) {
+        if (error) return
+        if (err) {
+          error = err
+          cleanup(err)
+        } else {
+          if (!--pending) cleanup()
+        }
+      }
     })
   })
 
