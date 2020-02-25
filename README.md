@@ -21,7 +21,7 @@ Let's create two osm-p2p databases and sync a node and photo between them using 
 var Osm = require('osm-p2p')
 var Blob = require('safe-fs-blob-store')
 var BlobSync = require('blob-store-replication-stream')
-var Syncfile = require('..')
+var Syncfile = require('osm-p2p-syncfile')
 var tmp = require('tmp')
 var os = require('os')
 var path = require('path')
