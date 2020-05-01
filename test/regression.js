@@ -61,7 +61,7 @@ test('REGRESSION: syncfiles containing windows file separators can be read', fun
 })
 
 test('REGRESSION: windows file separators are written to tarball', function (t) {
-  t.plan(19)
+  t.plan(15)
 
   tmp.dir(function (err, dir, cleanup) {
     t.error(err)
@@ -132,7 +132,7 @@ test('REGRESSION: windows file separators are written to tarball', function (t) 
     }
 
     function check () {
-      t.same(names.length, 9, 'right number of files in osm-p2p-db.tar')
+      t.same(names.length, 5, 'right number of files in osm-p2p-db.tar')
       names.forEach(name => {
         t.ok(name.indexOf('\\') === -1, 'no windows-style path separators')
       })
