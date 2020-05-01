@@ -95,7 +95,7 @@ test('replicate media + osm-p2p to syncfile', function (t) {
     function check (err) {
       t.error(err, 'replicate media ok')
 
-      syncfile._mfeed.feeds()[0].get(0, function (err, res) {
+      syncfile._mfeed.feeds()[0].get(0, {wait:false}, function (err, res) {
         t.error(err, 'get ok')
         t.deepEquals(res, node)
 

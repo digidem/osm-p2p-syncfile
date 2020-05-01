@@ -242,7 +242,7 @@ Syncfile.prototype._extractOsm = function (cb) {
   this._syncdir = syncdir
 
   // 2. create tmp sync dir
-  mkdirp(syncdir, function (err) {
+  mkdirp(path.join(syncdir, 'multifeed'), function (err) {
     if (err) return cb(err)
 
     // 3. check if p2p db exists in archive
