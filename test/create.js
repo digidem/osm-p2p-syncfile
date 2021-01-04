@@ -30,6 +30,7 @@ test('can initialize with new syncfile', function (t) {
 
         syncfile.close(function (err) {
           t.error(err, 'syncfile closed ok')
+          t.notOk(fs.existsSync(filepath), 'tmp dir deleted')
           t.end()
         })
       })
@@ -41,19 +42,22 @@ test('can initialize with an existing syncfile', function (t) {
   tmp.dir(function (err, dir, cleanup) {
     t.error(err)
 
-    var filepath = path.join(dir, 'sync.tar')
+    var syncDir = tmp.dirSync().name
+    var filepath = path.join(syncDir, 'sync.tar')
 
     setupAndClose(function (err) {
       t.error(err)
       t.ok(fs.existsSync(filepath))
-      t.equal(fs.readdirSync(dir).length, 1)
-      t.notEqual(fs.readdirSync(dir).indexOf('sync.tar'), -1)
+      t.equal(fs.readdirSync(syncDir).length, 1)
+      t.notEqual(fs.readdirSync(syncDir).indexOf('sync.tar'), -1)
+      t.notOk(fs.existsSync(dir), 'tmp dir deleted')
 
       setupAndClose(function (err) {
         t.error(err)
         t.ok(fs.existsSync(filepath))
-        t.equal(fs.readdirSync(dir).length, 1)
-        t.notEqual(fs.readdirSync(dir).indexOf('sync.tar'), -1)
+        t.equal(fs.readdirSync(syncDir).length, 1)
+        t.notEqual(fs.readdirSync(syncDir).indexOf('sync.tar'), -1)
+        t.notOk(fs.existsSync(dir), 'tmp dir deleted')
         t.end()
       })
     })
@@ -71,19 +75,22 @@ test('updates to inner osm-p2p-db.tar entry results in old entry being cleared',
   tmp.dir(function (err, dir, cleanup) {
     t.error(err)
 
-    var filepath = path.join(dir, 'sync.tar')
+    var syncDir = tmp.dirSync().name
+    var filepath = path.join(syncDir, 'sync.tar')
 
     setupAndClose(function (err) {
       t.error(err)
       t.ok(fs.existsSync(filepath))
-      t.equal(fs.readdirSync(dir).length, 1)
-      t.notEqual(fs.readdirSync(dir).indexOf('sync.tar'), -1)
+      t.equal(fs.readdirSync(syncDir).length, 1)
+      t.notOk(fs.existsSync(dir), 'tmp dir deleted')
+      t.notEqual(fs.readdirSync(syncDir).indexOf('sync.tar'), -1)
 
       setupAndClose(function (err) {
         t.error(err)
         t.ok(fs.existsSync(filepath))
-        t.equal(fs.readdirSync(dir).length, 1)
-        t.notEqual(fs.readdirSync(dir).indexOf('sync.tar'), -1)
+        t.equal(fs.readdirSync(syncDir).length, 1)
+        t.notOk(fs.existsSync(dir), 'tmp dir deleted')
+        t.notEqual(fs.readdirSync(syncDir).indexOf('sync.tar'), -1)
 
         var seen = []
         var ex = tar.extract()
