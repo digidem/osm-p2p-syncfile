@@ -197,7 +197,7 @@ Syncfile.prototype.close = function (cb) {
   // clean up tmp dir
   function cleanup (err) {
     mfeed.close(function (err2) {
-      rimraf(self._syncdir, function (err3) {
+      rimraf(self._tmpdir, function (err3) {
         var error = err || err2 || err3
         cb(error)
       })
