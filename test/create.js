@@ -3,6 +3,7 @@ var path = require('path')
 var fs = require('fs')
 var tmp = require('tmp')
 var tar = require('tar-stream')
+var rimraf = require('rimraf')
 var Syncfile = require('..')
 
 test('bad creation', function (t) {
@@ -58,6 +59,7 @@ test('can initialize with an existing syncfile', function (t) {
         t.equal(fs.readdirSync(syncDir).length, 1)
         t.notEqual(fs.readdirSync(syncDir).indexOf('sync.tar'), -1)
         t.notOk(fs.existsSync(dir), 'tmp dir deleted')
+        rimraf.sync(syncDir)
         t.end()
       })
     })
@@ -102,6 +104,7 @@ test('updates to inner osm-p2p-db.tar entry results in old entry being cleared',
         })
         ex.on('finish', function () {
           t.deepEquals(seen.sort(), ['___index.json', 'osm-p2p-db.tar'])
+          rimraf.sync(syncDir)
           t.end()
         })
       })
