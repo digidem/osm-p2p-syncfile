@@ -16,11 +16,12 @@ test('bad creation', function (t) {
 test('can initialize with new syncfile', function (t) {
   tmp.dir(function (err, dir, cleanup) {
     t.error(err)
-
+    var p2pTmpDir = path.join(dir, 'osm-p2p-syncfile-tmp')
     var filepath = path.join(dir, 'sync.tar')
     var syncfile = Syncfile(filepath, dir)
 
     syncfile.ready(function () {
+      t.ok(fs.existsSync(p2pTmpDir), 'p2p tmp dir created')
       t.ok(fs.existsSync(filepath), 'syncfile dir exists')
       t.equal(fs.readdirSync(dir).length, 2, 'two files in syncfile dir')
       t.notEqual(fs.readdirSync(dir).indexOf('sync.tar'), -1, 'sync.tar is present')
@@ -31,7 +32,7 @@ test('can initialize with new syncfile', function (t) {
 
         syncfile.close(function (err) {
           t.error(err, 'syncfile closed ok')
-          t.notOk(fs.existsSync(filepath), 'tmp dir deleted')
+          t.notOk(fs.existsSync(p2pTmpDir), 'p2p tmp dir deleted')
           t.end()
         })
       })
@@ -43,6 +44,7 @@ test('can initialize with an existing syncfile', function (t) {
   tmp.dir(function (err, dir, cleanup) {
     t.error(err)
 
+    var p2pTmpDir = path.join(dir, 'osm-p2p-syncfile-tmp')
     var syncDir = tmp.dirSync().name
     var filepath = path.join(syncDir, 'sync.tar')
 
@@ -51,14 +53,14 @@ test('can initialize with an existing syncfile', function (t) {
       t.ok(fs.existsSync(filepath))
       t.equal(fs.readdirSync(syncDir).length, 1)
       t.notEqual(fs.readdirSync(syncDir).indexOf('sync.tar'), -1)
-      t.notOk(fs.existsSync(dir), 'tmp dir deleted')
+      t.notOk(fs.existsSync(p2pTmpDir), 'p2p tmp dir deleted')
 
       setupAndClose(function (err) {
         t.error(err)
         t.ok(fs.existsSync(filepath))
         t.equal(fs.readdirSync(syncDir).length, 1)
         t.notEqual(fs.readdirSync(syncDir).indexOf('sync.tar'), -1)
-        t.notOk(fs.existsSync(dir), 'tmp dir deleted')
+        t.notOk(fs.existsSync(p2pTmpDir), 'p2p tmp dir deleted')
         rimraf.sync(syncDir)
         t.end()
       })
@@ -77,6 +79,7 @@ test('updates to inner osm-p2p-db.tar entry results in old entry being cleared',
   tmp.dir(function (err, dir, cleanup) {
     t.error(err)
 
+    var p2pTmpDir = path.join(dir, 'osm-p2p-syncfile-tmp')
     var syncDir = tmp.dirSync().name
     var filepath = path.join(syncDir, 'sync.tar')
 
@@ -84,14 +87,14 @@ test('updates to inner osm-p2p-db.tar entry results in old entry being cleared',
       t.error(err)
       t.ok(fs.existsSync(filepath))
       t.equal(fs.readdirSync(syncDir).length, 1)
-      t.notOk(fs.existsSync(dir), 'tmp dir deleted')
+      t.notOk(fs.existsSync(p2pTmpDir), 'p2p tmp dir deleted')
       t.notEqual(fs.readdirSync(syncDir).indexOf('sync.tar'), -1)
 
       setupAndClose(function (err) {
         t.error(err)
         t.ok(fs.existsSync(filepath))
         t.equal(fs.readdirSync(syncDir).length, 1)
-        t.notOk(fs.existsSync(dir), 'tmp dir deleted')
+        t.notOk(fs.existsSync(p2pTmpDir), 'p2p tmp dir deleted')
         t.notEqual(fs.readdirSync(syncDir).indexOf('sync.tar'), -1)
 
         var seen = []
