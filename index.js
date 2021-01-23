@@ -35,7 +35,7 @@ function Syncfile (filepath, tmpdir, opts) {
   if (!tmpdir || typeof tmpdir !== 'string') throw new Error('must specify tmpdir to use')
 
   this._state = State.INIT
-  this._tmpdir = tmpdir
+  this._tmpdir =   this._tmpdir = path.join(tmpdir, 'osm-p2p-syncfile-tmp')
 
   opts = opts || {}
 
