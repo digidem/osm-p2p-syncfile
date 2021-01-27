@@ -16,11 +16,12 @@ test('cannot use userdata before ready', function (t) {
 
     syncfile.userdata(function (err) {
       t.ok(err instanceof Error)
+      syncfile.userdata('foo', function (err) {
+        t.ok(err instanceof Error)
+        cleanup()
+      })
     })
 
-    syncfile.userdata('foo', function (err) {
-      t.ok(err instanceof Error)
-    })
   })
 })
 

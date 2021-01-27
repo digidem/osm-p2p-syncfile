@@ -60,8 +60,11 @@ test('create a good syncfile, truncate it, then repair', function (t) {
       syncfile.ready(function (err) {
         t.error(err, 'reopen ok')
         t.notOk(syncfile._err, 'no syncfile error')
-        cleanup(function () {
-          t.end()
+        syncfile.close(err => {
+          t.error(err)
+          cleanup(function () {
+            t.end()
+          })
         })
       })
     }
