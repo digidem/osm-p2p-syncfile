@@ -28,6 +28,8 @@ test('try to replicate before ready', function (t) {
 
     t.throws(syncfile.replicateData, 'replicateData() throws when not ready')
     t.throws(syncfile.replicateMedia, 'replicateMedia() throws when not ready')
+
+    cleanup()
   })
 })
 
@@ -46,6 +48,7 @@ test('try to replicate after close', function (t) {
     function onClose () {
       t.throws(syncfile.replicateData, 'replicateData() throws when closed')
       t.throws(syncfile.replicateMedia, 'replicateMedia() throws when closed')
+      cleanup()
     }
   })
 })
@@ -103,7 +106,10 @@ test('replicate media + osm-p2p to syncfile', function (t) {
           t.ok(exists, 'river.jpg exists')
         })
 
-        syncfile.close(t.end.bind(t))
+        syncfile.close(() => {
+          cleanup()
+          t.end()
+        })
       })
     }
   })
@@ -191,7 +197,10 @@ test('replicate osm-p2p + media to new syncfile, close, then reopen & check', fu
         collect(media.createReadStream('river.jpg'), function (err, data) {
           t.error(err, 'read media ok')
           t.equals(data.toString(), '<IMG DATA>')
-          t.end()
+          syncfile.close(() => {
+            cleanup()
+            t.end()
+          })
         })
       })
     }
@@ -295,7 +304,10 @@ test('replicate media + osm-p2p to syncfile with big data', function (t) {
         media.exists('hi-res-0.jpg', function (err, exists) {
           t.error(err, 'read media ok')
           t.ok(exists, 'media exists')
-          t.end()
+          syncfile.close(() => {
+            cleanup()
+            t.end()
+          })
         })
       })
     }
